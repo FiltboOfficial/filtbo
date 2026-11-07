@@ -1,3 +1,4 @@
+ 
 name: Extract Filtbo Website
 
 on:
@@ -13,17 +14,28 @@ jobs:
       - name: Get repository
         uses: actions/checkout@v4
 
-      - name: Extract website
+      - name: Find and extract website ZIP
         run: |
+          ZIP_FILE=$(find . -type f -iname "*.zip" -not -path "./.git/*" | head -n 1)
+
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No ZIP file found in repository."
+            echo "Repository files:"
+            find . -maxdepth 3 -type f
+            exit 1
+          fi
+
+          echo "Found ZIP: $ZIP_FILE"
           mkdir extracted-site
-          unzip -q filtbo-site.zip -d extracted-site
+          unzip -q "$ZIP_FILE" -d extracted-site
           cp -a extracted-site/. .
-          rm -rf extracted-site filtbo-site.zip
+          rm -rf extracted-site "$ZIP_FILE"
 
       - name: Save website files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Extract Filtbo website files"
+          git commit -m "Extract Filtbo website files" || echo "No changes to commit"
           git push
+          
