@@ -32,3 +32,4 @@ export default {
   // Netlify continues handling scheduled reminders for now.
   async scheduled() {}
 };
+// Cloudflare deployment check
