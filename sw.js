@@ -91,6 +91,8 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const target = (e.notification.data && e.notification.data.url) || '/';
+  // Opening the app also clears the other Filtbo notifications from the phone's top bar.
+  e.waitUntil(self.registration.getNotifications().then((list) => list.forEach((n) => n.close())).catch(() => {}));
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const c of list) { if ('focus' in c) { c.navigate && c.navigate(target); return c.focus(); } }
     return self.clients.openWindow(target);
