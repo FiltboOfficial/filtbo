@@ -1,5 +1,5 @@
 /* Filtbo service worker: keeps the app opening offline, caches Bible chapters you have read, and shows push notifications. */
-const VERSION = 'filtbo-v1';
+const VERSION = 'filtbo-v2';
 const SHELL = 'filtbo-shell-' + VERSION;
 const BIBLE = 'filtbo-bible-' + VERSION;
 const BIBLE_HOSTS = ['bible-api.com', 'api.getbible.net'];
@@ -21,7 +21,7 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
 
   // Never touch server functions or Google/Firebase/payment traffic.
-  if (url.pathname.startsWith('/.netlify/')) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/.netlify/')) return;
   // Whole-Bible files are saved by the app itself, so the worker leaves them alone.
   if (url.pathname.startsWith('/bibles/')) return;
 
@@ -71,7 +71,7 @@ self.addEventListener('push', (e) => {
   // An AI-reply push is pointless if the app is already open and visible.
   const show = () => self.registration.showNotification(d.title || 'Filtbo', {
     body: d.body || '',
-    icon: '/icons/icon-512.png',
+    icon: d.tag === 'filtbo-ai-reply' ? '/icons/geelko-ai.png' : '/icons/icon-512.png',
     badge: '/icons/badge-96.png',
     tag: d.tag || 'filtbo',
     data: { url: d.url || '/' },
