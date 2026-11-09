@@ -1,0 +1,9 @@
+netlify/
+src/
+.github/
+.git/
+node_modules/
+wrangler.jsonc
+package.json
+README.md
+a
