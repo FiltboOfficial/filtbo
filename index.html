@@ -4973,17 +4973,17 @@ html[data-font="atkinson"] body, html[data-font="atkinson"] body *:not(svg):not(
   $('#privacyCloseBtn').addEventListener('click', () => showScreen(privacyOpenedFrom === 'welcome' ? 'screen-welcome' : (privacyOpenedFrom === 'auth' ? 'screen-auth' : 'screen-profile')));
 
   // ---------- GOOGLE (mock) -> SIGN UP FORM ----------
-  $('#googleBtn').addEventListener('click', async function(){
-    if(!requireTerms()) return;
-    if(this.classList.contains('loading')) return;
-
-    if(!filtboFirebaseReady){
-      alert("Google Sign-In isn't available right now — please check your connection and try again.");
-      return;
-    }
-
-    this.classList.add('loading');
-    const btn = this;
+  const GOOGLE_CLIENT_ID = '483617451010-f64gptbv990p9t76iv8t653ihpnjsdos.apps.googleusercontent.com';
+  function googleErrorMessage(e){
+    const code = (e && e.code) || '';
+    let msg = 'Google sign-in failed' + (code ? ' (' + code + ')' : '') + '. Please try again.';
+    if(code === 'auth/unauthorized-domain') msg = 'This website is not yet allowed for Google sign-in. In Firebase: Authentication > Settings > Authorized domains, add ' + location.hostname + '. (' + code + ')';
+    else if(code === 'auth/operation-not-allowed') msg = 'Google sign-in is not turned on yet. In Firebase: Authentication > Sign-in method > Google > Enable. (' + code + ')';
+    else if(code === 'auth/network-request-failed') msg = 'Network problem. Check your internet and try again.';
+    return msg;
+  }
+  // Old way (Google window). Used only when the quick account list cannot be shown.
+  async function googlePopupLogin(btn){
     try{
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({prompt:'select_account'});
@@ -4998,12 +4998,61 @@ html[data-font="atkinson"] body, html[data-font="atkinson"] body *:not(svg):not(
       }
       btn.classList.remove('loading');
       if(code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
-      let msg = 'Google sign-in failed' + (code ? ' (' + code + ')' : '') + '. Please try again.';
-      if(code === 'auth/unauthorized-domain') msg = 'This website is not yet allowed for Google sign-in. In Firebase: Authentication > Settings > Authorized domains, add ' + location.hostname + '. (' + code + ')';
-      else if(code === 'auth/operation-not-allowed') msg = 'Google sign-in is not turned on yet. In Firebase: Authentication > Sign-in method > Google > Enable. (' + code + ')';
-      else if(code === 'auth/network-request-failed') msg = 'Network problem. Check your internet and try again.';
-      alert(msg);
+      alert(googleErrorMessage(e));
     }
+  }
+  // New way: Google's "Choose an account" box on top of the app, no page change.
+  function googleAccountList(btn){
+    return new Promise(function(resolve){
+      let done = false;
+      const finish = function(ok){ if(!done){ done = true; resolve(ok); } };
+      try{
+        if(!(window.google && google.accounts && google.accounts.id)) return finish(false);
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          callback: async function(resp){
+            finish(true);
+            try{
+              const cred = firebase.auth.GoogleAuthProvider.credential(resp.credential);
+              const result = await firebase.auth().signInWithCredential(cred);
+              await finishGoogleLogin(result.user);
+            }catch(e){
+              console.warn('Google credential sign-in failed:', e);
+              alert(googleErrorMessage(e));
+            }
+            btn.classList.remove('loading');
+          }
+        });
+        google.accounts.id.prompt(function(n){
+          try{
+            if(n.isDisplayed && n.isDisplayed()) return finish(true); // list is showing
+            if(n.isDismissedMoment && n.isDismissedMoment()){
+              if(n.getDismissedReason() === 'credential_returned') return;
+              btn.classList.remove('loading'); return finish(true);   // user closed it
+            }
+            if((n.isNotDisplayed && n.isNotDisplayed()) || (n.isSkippedMoment && n.isSkippedMoment())) finish(false); // cannot show, use backup
+          }catch(e){ finish(false); }
+        });
+        setTimeout(function(){ finish(false); }, 4000);
+      }catch(e){ console.warn('Google account list unavailable:', e); finish(false); }
+    });
+  }
+  (function loadGoogleAccountScript(){
+    try{ const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true; sc.defer = true; document.head.appendChild(sc); }catch(e){}
+  })();
+  $('#googleBtn').addEventListener('click', async function(){
+    if(!requireTerms()) return;
+    if(this.classList.contains('loading')) return;
+    if(!filtboFirebaseReady){
+      alert("Google Sign-In isn't available right now \u2014 please check your connection and try again.");
+      return;
+    }
+    this.classList.add('loading');
+    const btn = this;
+    const shown = await googleAccountList(btn);
+    if(!shown) await googlePopupLogin(btn);
   });
 
   async function finishGoogleLogin(user){
