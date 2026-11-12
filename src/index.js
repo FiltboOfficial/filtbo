@@ -12,6 +12,7 @@ import * as restorePremium from './api/restore-premium.js';
 import * as manageSubscription from './api/manage-subscription.js';
 import * as notifyEvent from './api/notify-event.js';
 import * as pushTest from './api/push-test.js';
+import * as translate from './api/translate.js';
 import * as subscribePlan from './api/subscribe-plan.js';
 
 const NETLIFY_HOST = 'filtbo.netlify.app';
@@ -20,6 +21,7 @@ const NETLIFY_HOST = 'filtbo.netlify.app';
 const ROUTES = {
   'ai-chat': { run: aiChat.onRequest, needs: ['GEMINI_API_KEY'] },
   'ai-image': { run: aiImage.onRequest, needs: ['GEMINI_API_KEY'] },
+  'translate': { run: translate.onRequest, needs: ['GEMINI_API_KEY'] },
   'verify-payment': { run: verifyPayment.onRequest, needs: ['PAYSTACK_SECRET_KEY'] },
   'restore-premium': { run: restorePremium.onRequest, needs: ['PAYSTACK_SECRET_KEY'] },
   'manage-subscription': { run: manageSubscription.onRequest, needs: ['PAYSTACK_SECRET_KEY'] },
