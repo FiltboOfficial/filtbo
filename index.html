@@ -180,6 +180,8 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   .setup-detail span{white-space:nowrap; display:flex; align-items:center; gap:5px;}
   .setup-detail span::before{content:""; width:5px; height:5px; border-radius:50%; background:var(--amber); flex:none; opacity:.7;}
 
+  .mt-note{font-size:11.5px; color:var(--ink-soft); background:rgba(127,127,127,.12); border-radius:10px; padding:8px 12px; margin:0 0 12px; line-height:1.45;}
+  #verDownloadAll[disabled]{opacity:.85; cursor:default; pointer-events:none;}
   /* ---------------- BIBLE LANGUAGE / VERSION CHOICE LIST ---------------- */
   #screen-app-lang, #screen-bible-lang, #screen-bible-version{background:var(--paper);}
   .choice-list{flex:1; overflow-y:auto; padding:6px 22px 24px; display:flex; flex-direction:column; gap:10px;}
@@ -2790,7 +2792,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   // Parses things like "John 3:16", "John 3:16-18", or "Psalms 23" against ALL_BOOKS
   // so a reference can be answered from the local cache without a network call.
   // Cache-first reference/passage lookup for the search boxes.
-  function fetchBiblePassage(q){
+  function fetchBiblePassageRaw(q){
     const parsed = parseReferenceQuery(q);
     if(parsed){
       return fetchBibleChapter(parsed.book, parsed.chapter).then(verses => {
@@ -3102,7 +3104,8 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   // First launch: the King James Version is the only Bible downloaded by default.
   // Other versions can be picked later from Profile.
   function startDefaultKjv(){
-    try{ localStorage.setItem('filtboFirstRun', '1'); localStorage.setItem(BIBLE_VERSION_KEY, 'kjv'); localStorage.setItem(BIBLE_LANG_KEY, 'English'); }catch(e){}
+    const firstVer = targetVersionFor(currentLang);
+    try{ localStorage.setItem('filtboFirstRun', '1'); localStorage.setItem(BIBLE_VERSION_KEY, firstVer); localStorage.setItem(BIBLE_LANG_KEY, versionGroup(firstVer) || 'English'); }catch(e){}
     registerBibleBackgroundSync();
     showScreen('screen-setup');
     startFirstTimeBibleDownload();
@@ -4871,6 +4874,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
     if(screens['screen-plans'] && screens['screen-plans'].classList.contains('active')) renderPlansList();
     try{ applySearchHint(); }catch(e){}
     try{ if(window.__filtboTranslate) window.__filtboTranslate(currentLang); }catch(e){}
+    try{ if(window.__filtboAfterLang) window.__filtboAfterLang(currentLang); }catch(e){}
   }
 
   function updateGreeting(){
@@ -4909,6 +4913,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
 
   $('#langSelect').addEventListener('change', function(){
     applyLanguage(this.value);
+    try{ syncBibleToLanguage(currentLang); }catch(e){}
     try{ refreshProfileMenu(); }catch(e){}
   });
   // first account: choose the app language once, then carry on to the Bible choice
@@ -5455,6 +5460,16 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
         list.appendChild(row);
       });
     });
+    // When every version is saved on the device, the big button says so instead of offering a download.
+    const allDone = BIBLE_LANGUAGES.every(g => g.versions.every(v => isVersionDownloaded(v.id)));
+    const dlAll = $('#verDownloadAll');
+    if(dlAll){
+      const lb = dlAll.querySelector('.btn-label');
+      if(lb) lb.textContent = allDone ? 'Already Downloaded' : 'Download all versions';
+      dlAll.disabled = allDone;
+    }
+    const vh = $('#verHint');
+    if(allDone && vh) vh.textContent = 'All Bible versions are saved on this device. They work offline.';
   }
 
   function switchBibleVersion(id){
@@ -5535,6 +5550,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   }
 
   $('#verDownloadAll')?.addEventListener('click', () => {
+    if(BIBLE_LANGUAGES.every(g => g.versions.every(v => isVersionDownloaded(v.id)))){ renderVersionsCard(); return; }
     const all = [];
     BIBLE_LANGUAGES.forEach(g => g.versions.forEach(v => all.push(v.id)));
     // fast whole-file versions first, slower ones after
@@ -5543,6 +5559,147 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
     const hint = $('#verHint');
     if(hint) hint.textContent = 'Downloading all versions. Some take about 45 minutes, so keep Filtbo open while they finish.';
   });
+
+
+  // ---------- APP LANGUAGE <-> BIBLE LANGUAGE ----------
+  // Spanish, Portuguese and Chinese have a real Bible version, so choosing that app language
+  // switches the Bible to it. The other app languages have no ready-made Bible here, so the
+  // English text is translated automatically (and the chapter says so).
+  const LANG_BIBLE = { en:{group:'English'}, es:{group:'Spanish', def:'bes'}, pt:{group:'Portuguese', def:'almeida'}, zh:{group:'Chinese', def:'cuv'} };
+  const LANG_ENGLISH_NAME = { en:'English', es:'Spanish', fr:'French', pt:'Portuguese', de:'German', ar:'Arabic', hi:'Hindi', zh:'Chinese', sw:'Swahili', yo:'Yoruba', ig:'Igbo', ha:'Hausa' };
+  function versionGroup(id){ for(const g of BIBLE_LANGUAGES){ if(g.versions.some(v => v.id === id)) return g.lang; } return null; }
+  function wantsMachineBible(l){ return !!l && !LANG_BIBLE[l]; }
+  function lastEnglishVersion(){
+    try{ const v = localStorage.getItem('filtboLastEnglishVersion'); if(v && versionGroup(v) === 'English') return v; }catch(e){}
+    return 'kjv';
+  }
+  function targetVersionFor(l){ return (LANG_BIBLE[l] && LANG_BIBLE[l].def) || lastEnglishVersion(); }
+  function syncBibleToLanguage(lang){
+    const wantGroup = LANG_BIBLE[lang] ? LANG_BIBLE[lang].group : 'English';
+    const cur = currentBibleVersion(), curGroup = versionGroup(cur);
+    if(curGroup === wantGroup) return;
+    if(curGroup === 'English'){ try{ localStorage.setItem('filtboLastEnglishVersion', cur); }catch(e){} }
+    const target = targetVersionFor(lang);
+    if(!isVersionDownloaded(target) && !navigator.onLine) return;   // cannot fetch it right now: keep what is readable
+    switchBibleVersion(target);
+  }
+
+  // Automatic translation (same /api/translate the rest of the app uses), cached on the device.
+  const mtMem = new Map();
+  const mtKey = (lang, s) => 'mt:' + lang + '::' + s;
+  function mtIdbGet(keys){
+    return idbOpen().then(db => new Promise(resolve => {
+      const out = keys.map(() => null);
+      try{
+        const tx = db.transaction(BIBLE_STORE, 'readonly'), st = tx.objectStore(BIBLE_STORE);
+        keys.forEach((k, i) => { const r = st.get(k); r.onsuccess = () => { if(r.result && r.result.t) out[i] = r.result.t; }; });
+        tx.oncomplete = () => resolve(out); tx.onerror = () => resolve(out); tx.onabort = () => resolve(out);
+      }catch(e){ resolve(out); }
+    })).catch(() => keys.map(() => null));
+  }
+  function mtIdbPut(entries){
+    idbOpen().then(db => { const tx = db.transaction(BIBLE_STORE, 'readwrite'), st = tx.objectStore(BIBLE_STORE); entries.forEach(e => st.put({id:e[0], t:e[1], cachedAt:Date.now()})); }).catch(() => {});
+  }
+  function mtSplit(s){
+    const parts = [];
+    while(s.length > 500){
+      let i = s.lastIndexOf('. ', 500); if(i < 100) i = s.lastIndexOf(' ', 500); if(i < 1) i = 500;
+      parts.push(s.slice(0, i + 1).trim()); s = s.slice(i + 1).trim();
+    }
+    parts.push(s); return parts;
+  }
+  async function mtTranslate(lang, strings){
+    const pieces = strings.map(mtSplit);
+    const need = [...new Set([].concat(...pieces).filter(x => x && !mtMem.has(mtKey(lang, x))))];
+    if(need.length){
+      const hits = await mtIdbGet(need.map(x => mtKey(lang, x)));
+      const todo = [];
+      need.forEach((x, i) => { if(hits[i]) mtMem.set(mtKey(lang, x), hits[i]); else todo.push(x); });
+      const saved = [];
+      for(let i = 0; i < todo.length;){
+        const batch = []; let chars = 0;
+        while(i < todo.length && batch.length < 40 && (!batch.length || chars + todo[i].length <= 8000)){ chars += todo[i].length; batch.push(todo[i++]); }
+        const r = await fetch('/api/translate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ lang, texts: batch }) });
+        if(!r.ok) throw new Error('http ' + r.status);
+        const d = await r.json();
+        if(!d || !Array.isArray(d.texts) || d.texts.length !== batch.length) throw new Error('bad');
+        batch.forEach((x, j) => { const tr = String(d.texts[j] || '').trim(); if(tr){ mtMem.set(mtKey(lang, x), tr); saved.push([mtKey(lang, x), tr]); } });
+      }
+      if(saved.length) mtIdbPut(saved);
+    }
+    return pieces.map(ps => ps.map(x => mtMem.get(mtKey(lang, x)) || x).join(' '));
+  }
+
+  // Shows the open chapter in the app language (real Bible version or automatic translation).
+  async function localizeChapter(){
+    const cr = currentReading; if(!cr || !cr.verses || !cr.verses.length) return;
+    const body = $('#readBody'); if(!body) return;
+    const lang = currentLang, verses = cr.verses;
+    verses.forEach(v => { if(v.orig === undefined) v.orig = v.text; });
+    const shownVer = readerForcedVersion || currentBibleVersion();
+    const paint = (vals) => {
+      if(currentReading !== cr) return;
+      verses.forEach((v, i) => {
+        v.text = vals[i];
+        const p = body.querySelector('.read-verse[data-num="' + v.num + '"]'), node = p && p.childNodes[1];
+        if(node && node.nodeType === 3) node.nodeValue = vals[i] + ' ';
+      });
+    };
+    const old = body.querySelector('.mt-note'); if(old) old.remove();
+    if(!(wantsMachineBible(lang) && versionGroup(shownVer) === 'English')){ paint(verses.map(v => v.orig)); return; }
+    const vm = findBibleVersion(shownVer);
+    const note = 'This chapter was translated automatically into ' + LANG_ENGLISH_NAME[lang] + ' from the ' + (vm ? vm.name : 'English Bible') + '. It is not an official Bible translation.';
+    try{
+      const out = await mtTranslate(lang, verses.map(v => v.orig).concat([note]));
+      if(lang !== currentLang || currentReading !== cr) return;
+      paint(out.slice(0, -1));
+      const n = document.createElement('p'); n.className = 'mt-note'; n.textContent = out[out.length - 1];
+      body.insertBefore(n, body.firstChild);
+    }catch(e){ /* keep the original text */ }
+  }
+  async function mtChapterVerses(verses){
+    const lang = currentLang;
+    if(!wantsMachineBible(lang) || versionGroup(currentBibleVersion()) !== 'English') return verses;
+    try{ const out = await mtTranslate(lang, verses.map(v => v.text)); return verses.map((v, i) => ({num:v.num, text:out[i], orig:v.text})); }
+    catch(e){ return verses; }
+  }
+  function fetchBiblePassage(q){
+    return fetchBiblePassageRaw(q).then(async r => {
+      const lang = currentLang;
+      if(!wantsMachineBible(lang) || versionGroup(currentBibleVersion()) !== 'English') return r;
+      try{ const out = await mtTranslate(lang, [r.reference, r.text]); return Object.assign({}, r, {reference:out[0], text:out[1]}); }
+      catch(e){ return r; }
+    });
+  }
+
+  // Verse of the Day in the app language.
+  async function refreshVotd(){
+    const st = votdState; if(!st) return;
+    const textEl = $('#votdText'), refEl = $('#votdRef'); if(!textEl || !refEl) return;
+    if(!st.orig) st.orig = st.verse;
+    const base = st.orig, lang = currentLang;
+    if(lang === 'en'){ st.verse = base; textEl.textContent = '"' + base.text + '"'; refEl.textContent = base.ref + ' · KJV'; return; }
+    try{
+      let text, ref, tag = '';
+      const nat = LANG_BIBLE[lang];
+      if(nat && nat.def){
+        const cur = currentBibleVersion();
+        const ver = versionGroup(cur) === nat.group ? cur : nat.def;
+        const pr = parseReferenceQuery(base.ref);
+        const verses = await fetchBibleChapter(pr.book, pr.chapter, ver);
+        const hit = verses.find(v => v.num === pr.vStart);
+        if(!hit) throw new Error('verse');
+        text = hit.text; tag = ' · ' + ver.toUpperCase();
+        ref = (await mtTranslate(lang, [base.ref]))[0];
+      }else{
+        const out = await mtTranslate(lang, [base.text, base.ref]); text = out[0]; ref = out[1];
+      }
+      if(votdState !== st || currentLang !== lang) return;
+      st.verse = Object.assign({}, base, {text, ref});
+      textEl.textContent = '"' + text + '"'; refEl.textContent = ref + tag;
+    }catch(e){ /* stay with the English verse */ }
+  }
+  window.__filtboAfterLang = function(){ try{ localizeChapter(); }catch(e){} try{ refreshVotd(); }catch(e){} };
 
   // ---------- ADS: one ad on the home screen, below the search area. Nowhere else. ----------
   const ADSENSE_CLIENT = 'ca-pub-1175401213691509';
@@ -6055,6 +6212,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
     state.lastRead = {book, chapter, api:apiSlug, verse: Math.min(3, verses.length), total: verses.length};
     renderContinue();
     persistSession();
+    try{ localizeChapter(); }catch(e){}
   }
 
   function toggleVerseSave(book, chapter, num, text, btnEl){
@@ -7009,6 +7167,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
     $('#audioVersesBack').addEventListener('click', () => showAudioChapterGrid(book));
 
     fetchBibleChapter(book, chapter)
+      .then(mtChapterVerses)
       .then(verses => renderAudioVerseList(book, chapter, verses))
       .catch(() => {
         if(book === 'Genesis' && chapter === 1){
@@ -8225,6 +8384,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   let aiPrefs = aiPrefsLoad();
   function aiPrefsForServer(){
     const p = Object.assign({}, aiPrefs);
+    if((!p.lang || p.lang === 'auto') && currentLang && currentLang !== 'en' && LANG_ENGLISH_NAME[currentLang]) p.lang = LANG_ENGLISH_NAME[currentLang];
     if(p.useVersion){ try{ p.version = String(localStorage.getItem('filtboBibleVersion') || '').slice(0, 24); }catch(e){} }
     return p;
   }
@@ -8548,6 +8708,7 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
 
     textEl.textContent = `"${votdState.verse.text}"`;
     refEl.textContent = `${votdState.verse.ref} · KJV`;
+    try{ refreshVotd(); }catch(e){}
 
     const likedKey = 'filtboVotdLiked_' + votdState.dateKey;
     const alreadyLiked = localStorage.getItem(likedKey) === '1';
