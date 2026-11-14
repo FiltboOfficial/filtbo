@@ -1364,6 +1364,35 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   html[data-filtbo-theme="dark"] .quick-item, html[data-filtbo-theme="dark"] .choice-item-label{color:#fff !important;}
   html[data-filtbo-theme="dark"] .choice-item-sub, html[data-filtbo-theme="dark"] .result-ref{color:#d8d2c8 !important;}
 </style>
+
+<style id="filtbo-music-mini-wifi">
+  /* ---- Music: tiny floating player after "Done" ---- */
+  .music-mini{position:absolute; right:14px; bottom:18px; z-index:29; display:flex; align-items:center; height:34px; border-radius:999px; background:var(--ink); color:var(--paper); box-shadow:0 6px 18px rgba(0,0,0,.28); opacity:0; transform:translateY(14px) scale(.8); transform-origin:100% 100%; pointer-events:none; transition:opacity .25s ease, transform .3s cubic-bezier(.2,.9,.3,1.2);}
+  .music-mini.show{opacity:1; transform:none; pointer-events:auto;}
+  .music-mini button{border:0; background:transparent; color:inherit; font:800 11.5px 'Manrope',sans-serif; cursor:pointer; height:34px; display:flex; align-items:center;}
+  .music-mini .mm-open{gap:7px; padding:0 4px 0 12px;}
+  .music-mini .mm-off{width:30px; justify-content:center; font-size:17px; line-height:1; padding:0 4px 0 0; opacity:.8;}
+  .mm-bars{display:inline-flex; align-items:flex-end; gap:2px; height:12px;}
+  .mm-bars i{display:block; width:3px; height:100%; background:var(--amber,#f2790f); border-radius:2px; transform-origin:bottom; animation:mmBar 1s ease-in-out infinite;}
+  .mm-bars i:nth-child(2){animation-delay:.2s;} .mm-bars i:nth-child(3){animation-delay:.4s;}
+  @keyframes mmBar{0%,100%{transform:scaleY(.3);} 50%{transform:scaleY(1);}}
+  @media (prefers-reduced-motion:reduce){ .mm-bars i{animation:none;} }
+  html[data-filtbo-theme="dark"] .music-mini{background:#26221d; color:#f6f1e8; border:1px solid #3a352e;}
+  /* ---- Settings: auto-download on WiFi switch ---- */
+  .auto-wifi-row{display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); cursor:pointer;}
+  .auto-wifi-row strong{display:block; font-size:13.5px; font-weight:800; color:var(--ink);}
+  .auto-wifi-row small{display:block; font-size:11.5px; line-height:1.45; color:var(--ink-soft); margin-top:3px;}
+  .auto-wifi-row input{position:absolute; opacity:0; width:0; height:0;}
+  .aw-switch{flex:none; width:46px; height:27px; border-radius:999px; background:#cfc8bb; position:relative; transition:background .2s;}
+  .aw-switch::after{content:""; position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:transform .2s;}
+  .auto-wifi-row input:checked + .aw-switch{background:var(--amber,#f2790f);}
+  .auto-wifi-row input:checked + .aw-switch::after{transform:translateX(19px);}
+  .auto-wifi-row input:focus-visible + .aw-switch{outline:2px solid var(--amber,#f2790f); outline-offset:2px;}
+  html[data-filtbo-theme="dark"] .auto-wifi-row{border-color:#302c26;}
+  html[data-filtbo-theme="dark"] .auto-wifi-row strong{color:#f6f1e8;}
+  html[data-filtbo-theme="dark"] .auto-wifi-row small{color:#d8d2c8;}
+  html[data-filtbo-theme="dark"] .aw-switch{background:#4a443b;}
+</style>
 </head>
 <body>
 <!-- ═══ CSS 16 · SPLASH + LOGO RULES — Launch splash and how logos are drawn. ═══ -->
@@ -2209,6 +2238,7 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
     </div>
     <div class="chapter-bar" id="chapterBar">
       <button type="button" class="vbtn" id="listenChapterBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg><span>Audio</span></button>
+      <button type="button" class="vbtn v-music" id="musicChapterBtn" title="Play music while you read"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>Music</span></button>
       <button type="button" class="vbtn v-chat" id="chatChapterBtn" title="Chat with Geelko AI about this chapter"><span class="gk-mark" aria-hidden="true"></span><span>Chat</span></button>
       <button type="button" class="vbtn" id="shareChapterBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg><span>Share</span></button>
       <button type="button" class="vbtn" id="likeChapterBtn" title="Like this chapter"><svg class="heart" width="16" height="16" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span>Like</span><span class="lk-n" id="likeChapterCount"></span></button>
@@ -2226,6 +2256,10 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
       <input type="range" class="mvol" min="0" max="100" value="35" aria-label="Music volume">
       <div class="music-note"></div>
       <button type="button" class="music-done" id="musicSheetDone">Done</button>
+    </div>
+    <div class="music-mini" id="musicMini" role="group" aria-label="Music player">
+      <button type="button" class="mm-open" id="musicMiniOpen" aria-label="Open music controls"><span class="mm-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="musicMiniLabel">Music</span></button>
+      <button type="button" class="mm-off" id="musicMiniOff" aria-label="Turn music off">&times;</button>
     </div>
     <button class="read-ver-tag" id="readVerTag" type="button" title="Switch translation"></button>
     <div class="read-body" id="readBody">
@@ -2499,6 +2533,11 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
         <div class="dl-track"><div class="dl-fill" id="dlBarFill"></div></div>
         <div class="dl-meta"><span id="dlPct">0%</span><span id="dlData"></span><span id="dlTime"></span></div>
         <button class="btn-primary" id="dlRetryBtn" type="button" style="display:none; margin-top:14px; padding:11px;"><span class="btn-label">Download now</span></button>
+        <label class="auto-wifi-row" for="autoWifiToggle">
+          <span><strong>Auto-download on WiFi</strong><small id="autoWifiNote">When you are on WiFi, Filtbo downloads the complete offline Bible by itself.</small></span>
+          <input type="checkbox" id="autoWifiToggle" checked>
+          <span class="aw-switch" aria-hidden="true"></span>
+        </label>
       </div>
 
       <div class="profile-card" id="versionsCard" data-pgroup="functions">
@@ -5429,7 +5468,42 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     return msg;
   }
   // Old way (Google window). Used only when the quick account list cannot be shown.
+  // Can a sign-in window open here at all? (checked BEFORE trying, so we never redirect blindly)
+  function googlePopupSupported(){
+    try{
+      if(!/^https?:$/.test(location.protocol)) return false;                  // file://, app shells
+      if(/; wv\)|\bwv\b|FBAN|FBAV|Instagram|Line\//i.test(navigator.userAgent)) return false;  // in-app browsers / WebViews
+    }catch(e){}
+    return true;
+  }
+  function showGoogleBlockedDialog(btn, code){
+    let m = document.getElementById('googleBlockedDialog');
+    if(!m){
+      m = document.createElement('div'); m.id = 'googleBlockedDialog';
+      m.style.cssText = 'position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.6);';
+      m.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="gbdTitle" style="width:100%;max-width:340px;background:#3c4043;color:#e8eaed;border-radius:18px;padding:26px 22px 18px;text-align:center;font-family:Manrope,system-ui,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.5);">'
+        + '<div id="gbdTitle" style="font-size:19px;font-weight:700;margin-bottom:10px;">Google sign-in window is blocked</div>'
+        + '<p id="gbdText" style="font-size:13.5px;line-height:1.5;color:#bdc1c6;margin:0 0 18px;"></p>'
+        + '<button type="button" id="gbdRetry" style="width:100%;padding:12px;border:0;border-radius:12px;background:#f2790f;color:#fff;font:800 14px Manrope,sans-serif;cursor:pointer;">Try again</button>'
+        + '<button type="button" id="gbdPage" style="width:100%;margin-top:9px;padding:12px;border:1px solid #5f6368;border-radius:12px;background:transparent;color:#e8eaed;font:700 13.5px Manrope,sans-serif;cursor:pointer;">Open Google sign-in page instead</button>'
+        + '<button type="button" id="gbdCancel" style="width:100%;margin-top:6px;padding:10px;border:0;background:transparent;color:#9aa0a6;font:700 13px Manrope,sans-serif;cursor:pointer;">Cancel</button></div>';
+      document.body.appendChild(m);
+    }
+    m.querySelector('#gbdText').textContent = code === 'auth/popup-blocked'
+      ? 'Your browser blocked the Google window. Allow pop-ups for this site, then tap Try again. Or open Google\u2019s page (you will leave this page and come back after signing in).'
+      : 'A Google sign-in window cannot open here. You can sign in on Google\u2019s page (you will leave this page and come back after signing in).';
+    m.style.display = 'flex';
+    const close = () => { m.style.display = 'none'; };
+    m.querySelector('#gbdCancel').onclick = close;
+    m.querySelector('#gbdRetry').onclick = () => { close(); btn.classList.add('loading'); googlePopupLogin(btn); };
+    m.querySelector('#gbdPage').onclick = async () => {
+      close(); btn.classList.add('loading');
+      try{ await firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
+      catch(e2){ btn.classList.remove('loading'); alert(googleErrorMessage(e2)); }
+    };
+  }
   async function googlePopupLogin(btn){
+    if(!googlePopupSupported()){ btn.classList.remove('loading'); showGoogleBlockedDialog(btn, 'auth/operation-not-supported-in-this-environment'); return; }
     try{
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({prompt:'select_account'});
@@ -5439,10 +5513,11 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     }catch(e){
       console.warn('Google sign-in failed or was cancelled:', e);
       const code = (e && e.code) || '';
-      if(code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment'){
-        try{ await firebase.auth().signInWithRedirect(new firebase.auth.GoogleAuthProvider()); return; }catch(e2){ console.warn(e2); }
-      }
       btn.classList.remove('loading');
+      if(code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment'){
+        showGoogleBlockedDialog(btn, code);   // never jump to another page on its own: ask first
+        return;
+      }
       if(code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
       alert(googleErrorMessage(e));
     }
@@ -5458,6 +5533,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
           client_id: GOOGLE_CLIENT_ID,
           auto_select: false,
           cancel_on_tap_outside: true,
+          use_fedcm_for_prompt: true,
+          itp_support: true,
           callback: async function(resp){
             finish(true);
             try{
@@ -5481,7 +5558,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
             if((n.isNotDisplayed && n.isNotDisplayed()) || (n.isSkippedMoment && n.isSkippedMoment())) finish(false); // cannot show, use backup
           }catch(e){ finish(false); }
         });
-        setTimeout(function(){ finish(false); }, 4000);
+        setTimeout(function(){ finish(false); }, 3000);
       }catch(e){ console.warn('Google account list unavailable:', e); finish(false); }
     });
   }
@@ -5657,6 +5734,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     showScreen('screen-dash');
     persistSession();
     resumeOfflineDownloadIfNeeded();
+    setTimeout(autoDownloadAll, 7000);   // after the app is up, quietly finish the offline Bible on WiFi
     setTimeout(retryPendingPlans, 4000);
     applyPremiumBrand();
     setTimeout(recoverPendingVip, 2500); setTimeout(syncRenewal, 4500);
@@ -5921,6 +5999,11 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         vDl[id] = {running:false, queued:false, pct:0, note:'Needs internet. Tap Download when you are online.'};
         continue;
       }
+      if(autoIds.has(id) && !onWifi()){
+        vDl[id] = {running:false, queued:false, pct:0, note:'Waiting for WiFi. It continues by itself.'};
+        autoIds.delete(id);
+        continue;
+      }
       vDl[id] = {running:true, queued:false, pct:0, note:''};
       renderVersionsCard();
       const started = Date.now();
@@ -5934,6 +6017,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         if(!ok) await downloadBibleGently(id, started, opts);
         localStorage.setItem(bibleSyncDoneKey(id), '1');
         vDl[id] = {running:false, queued:false, pct:100, note:''};
+        autoIds.delete(id); updateAutoWifiNote();
       }catch(e){
         vDl[id] = {running:false, queued:false, pct:vDl[id].pct, note:'Download stopped. Tap Download to try again.'};
       }
@@ -5953,6 +6037,51 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     if(hint) hint.textContent = 'Downloading all versions. Some take about 45 minutes, so keep Filtbo open while they finish.';
   });
 
+
+
+  // ---------- AUTO-DOWNLOAD THE COMPLETE OFFLINE BIBLE ON WIFI ----------
+  const AUTO_WIFI_KEY = 'filtboAutoWifiDownload';   // '0' = switched off in Settings; anything else = on
+  const autoIds = new Set();
+  function autoWifiOn(){ try{ return localStorage.getItem(AUTO_WIFI_KEY) !== '0'; }catch(e){ return true; } }
+  function onWifi(){
+    if(!navigator.onLine) return false;
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if(!c) return true;                       // browser can't tell (e.g. iOS): treat as OK
+    if(c.saveData) return false;              // phone's Data Saver is on
+    return !/^(cellular|bluetooth|wimax|none)$/.test(c.type || '');
+  }
+  function missingVersionIds(){
+    const cur = currentBibleVersion(), all = [];
+    BIBLE_LANGUAGES.forEach(g => g.versions.forEach(v => { if(!isVersionDownloaded(v.id)) all.push(v.id); }));
+    // current version first, then fast whole-file versions, then the slower ones
+    return all.sort((a, b) => (b === cur) - (a === cur) || (bulkCandidates(b).length ? 1 : 0) - (bulkCandidates(a).length ? 1 : 0));
+  }
+  function updateAutoWifiNote(){
+    const n = $('#autoWifiNote'), t = $('#autoWifiToggle'); if(!n || !t) return;
+    t.checked = autoWifiOn();
+    const left = missingVersionIds().length;
+    if(!autoWifiOn()) n.textContent = 'Off. Filtbo will not download the Bible by itself. You can still download it with the buttons here.';
+    else if(!left) n.textContent = 'On. The complete offline Bible is already downloaded.';
+    else if(!navigator.onLine) n.textContent = 'On. ' + left + ' version' + (left > 1 ? 's' : '') + ' left. Waiting for WiFi.';
+    else if(!onWifi()) n.textContent = 'On. ' + left + ' version' + (left > 1 ? 's' : '') + ' left. Waiting for WiFi (mobile data is not used).';
+    else n.textContent = 'On. Downloading the remaining ' + left + ' version' + (left > 1 ? 's' : '') + ' on WiFi.';
+  }
+  function autoDownloadAll(){
+    updateAutoWifiNote();
+    if(!autoWifiOn() || !onWifi()) return;
+    if(!localStorage.getItem(BIBLE_VERSION_KEY)) return;            // setup not finished yet
+    missingVersionIds().forEach(id => { autoIds.add(id); queueVersionDownload(id); });
+    updateAutoWifiNote();
+  }
+  $('#autoWifiToggle')?.addEventListener('change', function(){
+    try{ localStorage.setItem(AUTO_WIFI_KEY, this.checked ? '1' : '0'); }catch(e){}
+    if(this.checked) autoDownloadAll(); else updateAutoWifiNote();
+  });
+  window.addEventListener('online', () => setTimeout(autoDownloadAll, 1500));
+  window.addEventListener('offline', updateAutoWifiNote);
+  try{ const _c = navigator.connection || navigator.mozConnection || navigator.webkitConnection; if(_c && _c.addEventListener) _c.addEventListener('change', () => setTimeout(autoDownloadAll, 800)); }catch(e){}
+  setInterval(() => { if(autoWifiOn() && localStorage.getItem(BIBLE_VERSION_KEY) && !vQueueRunning && !dlState.running && missingVersionIds().length) autoDownloadAll(); else updateAutoWifiNote(); }, 60000);  // gentle retry if a download stopped
+  setTimeout(updateAutoWifiNote, 1200);
 
   // ---------- APP LANGUAGE <-> BIBLE LANGUAGE ----------
   // Spanish, Portuguese and Chinese have a real Bible version, so choosing that app language
@@ -6880,6 +7009,15 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   function openMusicSheet(){
     if(!isVipActive()){ showScreen('screen-audio'); return; }
     $('#musicSheet').classList.toggle('open');
+    updateMusicMini();
+  }
+  // The small floating player: shown only while music plays and the full panel is closed.
+  function updateMusicMini(){
+    const mini = $('#musicMini'); if(!mini) return;
+    const names = {calm:'Calm', waves:'Waves', deep:'Deep', file:'My audio'};
+    const open = $('#musicSheet').classList.contains('open');
+    const lb = $('#musicMiniLabel'); if(lb) lb.textContent = names[musicMode] || 'Music';
+    mini.classList.toggle('show', musicMode !== 'off' && !open);
   }
   $('#listenChapterBtn').addEventListener('click', () => {
     if(!currentReading || !currentReading.verses.length) return;
@@ -6895,7 +7033,10 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     const txt = (currentReading.verses || []).map(v => v.num + ' ' + v.text).join('\n');
     shareScripture(currentReading.book + ' ' + currentReading.chapter, txt);
   });
-  $('#musicSheetDone').addEventListener('click', () => $('#musicSheet').classList.remove('open'));
+  $('#musicSheetDone').addEventListener('click', () => { $('#musicSheet').classList.remove('open'); updateMusicMini(); });
+  $('#musicChapterBtn')?.addEventListener('click', openMusicSheet);
+  $('#musicMiniOpen')?.addEventListener('click', () => { $('#musicSheet').classList.add('open'); updateMusicMini(); });
+  $('#musicMiniOff')?.addEventListener('click', () => { musicSet('off'); });
   $('#saveChapterBtn').addEventListener('click', toggleChapterSave);
   $('#readBack').addEventListener('click', () => goBack('screen-dash'));
 
@@ -7853,6 +7994,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     musicStop(); musicMode = mode;
     document.querySelectorAll('.music-opt').forEach(b => b.classList.toggle('active', b.dataset.m === mode)); document.querySelectorAll('.v-music,#musicChapterBtn').forEach(b => b.classList.toggle('active-music', mode !== 'off'));
     setMusicNote('');
+    updateMusicMini();
     if(mode === 'off') return;
     if(mode === 'file'){ $('#musicFile').click(); return; }
     try{
