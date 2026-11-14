@@ -1372,6 +1372,15 @@ html[data-font="handwritten"] body, html[data-font="handwritten"] body *:not(svg
   .music-mini button{border:0; background:transparent; color:inherit; font:800 11.5px 'Manrope',sans-serif; cursor:pointer; height:34px; display:flex; align-items:center;}
   .music-mini .mm-open{gap:7px; padding:0 4px 0 12px;}
   .music-mini .mm-off{width:30px; justify-content:center; font-size:17px; line-height:1; padding:0 4px 0 0; opacity:.8;}
+  /* The slide-up keyframe animation (fill-mode both) pinned the sheet open forever; use the transition instead */
+  .music-sheet{animation:none !important;}
+  .music-sheet:not(.open){visibility:hidden; pointer-events:none; transition:transform .25s ease, visibility 0s linear .25s;}
+  /* Music off + panel closed: collapse to a small round arrow */
+  .mm-arrow{display:none;}
+  .music-mini.arrow{width:34px; justify-content:center;}
+  .music-mini.arrow .mm-open{padding:0; width:34px; justify-content:center;}
+  .music-mini.arrow .mm-arrow{display:block;}
+  .music-mini.arrow .mm-bars, .music-mini.arrow #musicMiniLabel, .music-mini.arrow .mm-off{display:none;}
   .mm-bars{display:inline-flex; align-items:flex-end; gap:2px; height:12px;}
   .mm-bars i{display:block; width:3px; height:100%; background:var(--amber,#f2790f); border-radius:2px; transform-origin:bottom; animation:mmBar 1s ease-in-out infinite;}
   .mm-bars i:nth-child(2){animation-delay:.2s;} .mm-bars i:nth-child(3){animation-delay:.4s;}
@@ -2258,7 +2267,7 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
       <button type="button" class="music-done" id="musicSheetDone">Done</button>
     </div>
     <div class="music-mini" id="musicMini" role="group" aria-label="Music player">
-      <button type="button" class="mm-open" id="musicMiniOpen" aria-label="Open music controls"><span class="mm-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="musicMiniLabel">Music</span></button>
+      <button type="button" class="mm-open" id="musicMiniOpen" aria-label="Open music controls"><svg class="mm-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg><span class="mm-bars" aria-hidden="true"><i></i><i></i><i></i></span><span id="musicMiniLabel">Music</span></button>
       <button type="button" class="mm-off" id="musicMiniOff" aria-label="Turn music off">&times;</button>
     </div>
     <button class="read-ver-tag" id="readVerTag" type="button" title="Switch translation"></button>
@@ -7009,15 +7018,18 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   function openMusicSheet(){
     if(!isVipActive()){ showScreen('screen-audio'); return; }
     $('#musicSheet').classList.toggle('open');
+    if(!$('#musicSheet').classList.contains('open')) musicDone = true;
     updateMusicMini();
   }
   // The small floating player: shown only while music plays and the full panel is closed.
+  let musicDone = false; // set once the panel has been closed, so it collapses to the arrow even with nothing playing
   function updateMusicMini(){
     const mini = $('#musicMini'); if(!mini) return;
     const names = {calm:'Calm', waves:'Waves', deep:'Deep', file:'My audio'};
     const open = $('#musicSheet').classList.contains('open');
     const lb = $('#musicMiniLabel'); if(lb) lb.textContent = names[musicMode] || 'Music';
-    mini.classList.toggle('show', musicMode !== 'off' && !open);
+    mini.classList.toggle('arrow', musicMode === 'off');
+    mini.classList.toggle('show', !open && (musicMode !== 'off' || musicDone));
   }
   $('#listenChapterBtn').addEventListener('click', () => {
     if(!currentReading || !currentReading.verses.length) return;
@@ -7033,7 +7045,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     const txt = (currentReading.verses || []).map(v => v.num + ' ' + v.text).join('\n');
     shareScripture(currentReading.book + ' ' + currentReading.chapter, txt);
   });
-  $('#musicSheetDone').addEventListener('click', () => { $('#musicSheet').classList.remove('open'); updateMusicMini(); });
+  $('#musicSheetDone').addEventListener('click', () => { $('#musicSheet').classList.remove('open'); musicDone = true; updateMusicMini(); });
   $('#musicChapterBtn')?.addEventListener('click', openMusicSheet);
   $('#musicMiniOpen')?.addEventListener('click', () => { $('#musicSheet').classList.add('open'); updateMusicMini(); });
   $('#musicMiniOff')?.addEventListener('click', () => { musicSet('off'); });
