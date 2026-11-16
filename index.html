@@ -4042,35 +4042,46 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     const SPRING = 'cubic-bezier(.32,.72,0,1)';
     const bothTabs = TAB_SCREENS.includes(prev.id) && TAB_SCREENS.includes(next.id);
     const quiet = NAV_SKIP.includes(prev.id) || NAV_SKIP.includes(next.id);
-    const cleanup = () => { prev.style.zIndex = ''; next.style.zIndex = ''; };
     if(reduce || bothTabs || quiet){
       next.animate([{opacity:0, transform:'scale(.985)'},{opacity:1, transform:'none'}], {duration:320, easing:SPRING});
       prev.animate([{opacity:1},{opacity:0}], {duration:200, easing:'ease-out'});
       return;
     }
-    const shadow = '0 0 40px rgba(0,0,0,.28)';
+    // SMOOTH TRANSITIONS (fix for the jerky Premium / dashboard loading):
+    //  1. Only transform + opacity are animated, so the phone's GPU does all the work.
+    //     (The old version also animated brightness filters and a 40px shadow on
+    //     full-screen layers, which made slower phones drop most of the frames.)
+    //  2. The animation starts paused on its first frame and only plays after the
+    //     browser has painted the new screen, so the slide is never "eaten" by the
+    //     first-paint work and the page no longer jumps in at the end.
+    const dur = 340;
+    prev.style.willChange = next.style.willChange = 'transform, opacity';
+    prev.style.zIndex = isBack ? 2 : 1; next.style.zIndex = isBack ? 1 : 2;
+    const opt = {duration:dur, easing:SPRING, fill:'backwards'};
+    let anims;
     if(!isBack){            // PUSH
-      prev.style.zIndex = 1; next.style.zIndex = 2;
-      next.animate([{transform:'translate3d(100%,0,0)', boxShadow:shadow},{transform:'translate3d(0,0,0)', boxShadow:shadow}], {duration:520, easing:SPRING});
-      const a = prev.animate([
-        {transform:'translate3d(0,0,0)', opacity:1, filter:'brightness(1)', offset:0},
-        {transform:'translate3d(-28%,0,0)', opacity:1, filter:'brightness(.82)', offset:.97},
-        {transform:'translate3d(-28%,0,0)', opacity:0, filter:'brightness(.82)', offset:1}
-      ], {duration:520, easing:SPRING});
-      a.onfinish = a.oncancel = cleanup;
+      anims = [
+        next.animate([{transform:'translate3d(100%,0,0)'},{transform:'translate3d(0,0,0)'}], opt),
+        prev.animate([
+          {transform:'translate3d(0,0,0)', opacity:1, offset:0},
+          {transform:'translate3d(-25%,0,0)', opacity:1, offset:.96},
+          {transform:'translate3d(-25%,0,0)', opacity:0, offset:1}
+        ], opt)
+      ];
     }else{                  // POP
-      prev.style.zIndex = 2; next.style.zIndex = 1;
-      next.animate([
-        {transform:'translate3d(-28%,0,0)', filter:'brightness(.82)'},
-        {transform:'translate3d(0,0,0)', filter:'brightness(1)'}
-      ], {duration:480, easing:SPRING});
-      const a = prev.animate([
-        {transform:'translate3d(0,0,0)', opacity:1, boxShadow:shadow, offset:0},
-        {transform:'translate3d(100%,0,0)', opacity:1, boxShadow:shadow, offset:.97},
-        {transform:'translate3d(100%,0,0)', opacity:0, boxShadow:shadow, offset:1}
-      ], {duration:480, easing:SPRING});
-      a.onfinish = a.oncancel = cleanup;
+      anims = [
+        next.animate([{transform:'translate3d(-25%,0,0)'},{transform:'translate3d(0,0,0)'}], opt),
+        prev.animate([
+          {transform:'translate3d(0,0,0)', opacity:1, offset:0},
+          {transform:'translate3d(100%,0,0)', opacity:1, offset:.96},
+          {transform:'translate3d(100%,0,0)', opacity:0, offset:1}
+        ], opt)
+      ];
     }
+    const cleanup = () => { prev.style.zIndex = ''; next.style.zIndex = ''; prev.style.willChange = ''; next.style.willChange = ''; };
+    anims[1].onfinish = anims[1].oncancel = cleanup;
+    anims.forEach(a => a.pause());
+    requestAnimationFrame(() => requestAnimationFrame(() => { anims.forEach(a => { try{ a.play(); }catch(e){} }); }));
   }
   function showScreen(id){
     id = gateRedirect(id);
@@ -4547,7 +4558,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   }
 
   function vipFlag(cc) {
-    return `<img class="vc-flag" src="https://flagcdn.com/w40/${cc}.png" alt="" width="20" height="20" loading="lazy" onerror="this.style.visibility='hidden'">`;
+    return `<img class="vc-flag" src="https://flagcdn.com/w40/${cc}.png" alt="" width="20" height="20" decoding="async" onerror="this.outerHTML='<span class=&quot;vc-flag&quot; aria-hidden=&quot;true&quot; style=&quot;display:inline-block;width:20px;text-align:center;font-size:15px;line-height:20px&quot;>'+String.fromCodePoint(...'${cc}'.toUpperCase().split('').map(c=>127397+c.charCodeAt(0)))+'</span>'">`;
   }
 
   function vipCurrencyOptions() {
@@ -4570,6 +4581,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
           ${list.map(c => `<li role="option" tabindex="0" data-cur="${c[0]}" aria-selected="${c[0] === vipDisplayCurrency}">${vipFlag(c[2])}<span>${c[1]} (${c[0]})</span></li>`).join('')}
         </ul>
       </div>`;
+    if(renderVipCurrencyPickers._last === html) return;
+    renderVipCurrencyPickers._last = html;
     document.querySelectorAll('[data-vipcur]').forEach(el => { el.innerHTML = html; });
   }
 
@@ -4584,7 +4597,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
 
   document.addEventListener('click', function(e) {
     const opt = e.target.closest && e.target.closest('.vc-menu li');
-    if (opt) { applyVipCurrency(opt.dataset.cur, true); return; }
+    if (opt) { applyVipCurrency(opt.dataset.cur, true); document.querySelectorAll('.vc-menu').forEach(m => { m.hidden = true; }); return; }
     const btn = e.target.closest && e.target.closest('.vc-btn');
     document.querySelectorAll('.vc-menu').forEach(m => {
       const mine = btn && btn.parentNode === m.parentNode;
