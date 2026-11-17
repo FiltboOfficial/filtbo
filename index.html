@@ -1727,6 +1727,48 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
 })();
 </script>
 
+<style id="filtbo-whatsapp-motion">
+/* ==== Motion: WhatsApp-style only. Screen changes are handled in showScreen(); sheets slide up; everything else is still. ==== */
+*,*::before,*::after{animation:none !important; transition:none !important;}
+button:active,.btn-primary:active,.btn-google:active,.nav-item:active,.vbtn:active,.pm-row:active,.choice-item:active,.browse-entry:active,.ai-suggestion:active,.ai-chip:active,.g-card:active,.appearance-option:active,.quick-item:active,.topic-chip:active,.btn-guest:active,.ga-social-row a:active,#aiChatFab:active{scale:none !important; transform:none !important;}
+::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none !important;}
+
+/* Bottom sheets: backdrop fades, sheet slides up (WhatsApp "Viewed by" feel) */
+@keyframes waSheetUp{from{transform:translate3d(0,100%,0);}to{transform:translate3d(0,0,0);}}
+@keyframes waFade{from{opacity:0;}to{opacity:1;}}
+.ai-history-modal.show{animation:waFade .2s linear both !important;}
+.ai-history-modal.show .ai-history-sheet,#screen-auth:not([data-step="start"]) .auth-sheet{animation:waSheetUp .28s cubic-bezier(0,0,0,1) both !important;}
+.music-sheet:not(.open){transition:transform .26s cubic-bezier(0,0,0,1), visibility 0s linear .26s !important;}
+.music-sheet.open{transition:transform .26s cubic-bezier(0,0,0,1) !important;}
+
+/* Loading spinners and the intro swipe keep working (they are feedback, not decoration) */
+.load-spinner{animation:loadSpin .8s linear infinite !important;}
+.ai-thinking-spinner{animation:aiThinkingSpin .72s linear infinite !important;}
+.auth-spinner,.search-status .sp,.read-status .sp{animation:spin .7s linear infinite !important;}
+.as-track{transition:transform .26s cubic-bezier(.2,0,0,1) !important;}
+
+/* Things that used to fade in via animation must simply be visible */
+#filtboSplash > img{opacity:1 !important; transform:none !important;}
+#filtboSplash .fs-glow,#filtboSplash .fs-ring{display:none !important;}
+.as-dots button.on::after{transform:scaleX(1) !important;}
+
+/* Premium / payment screens: completely still */
+#screen-premium,#screen-premium *,#screen-premium-intro,#screen-premium-intro *,#screen-donate,#screen-donate *{animation:none !important; transition:none !important; scale:none !important;}
+</style>
+<style id="filtbo-ios-sheets">
+/* Verse / chapter / translation pickers: iOS spring + drag-to-minimize (driven by the script at the end of the page) */
+.vp-sheet{overscroll-behavior:contain; will-change:transform;}
+.vp-handle,.vp-head{touch-action:none;}
+.vp-handle{position:relative; cursor:grab;}
+.vp-handle::before{content:""; position:absolute; inset:-14px -90px;}
+</style>
+<style id="filtbo-blur-art">
+.vp-overlay,.ai-history-modal{-webkit-backdrop-filter:blur(10px) saturate(1.1); backdrop-filter:blur(10px) saturate(1.1);}
+.book-row .br-num{width:52px; height:52px; border-radius:14px; padding:0; overflow:hidden; background:none !important; box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.book-row .br-num svg{display:block; width:100%; height:100%; color:inherit;}
+.book-chip .bc-num{width:36px; height:36px; border-radius:10px; padding:0; overflow:hidden; background:none !important;}
+.book-chip .bc-num svg{display:block; width:100%; height:100%;}
+</style>
 <div id="app-stage">
 <div id="app-frame">
   <div id="offlinePremiumToast" class="offline-premium-toast"><strong>Premium needs a connection</strong><span>Upgrading to Premium and using Premium features require an internet connection. Please reconnect and try again.</span></div>
@@ -3114,6 +3156,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     {ab:'RM', name:'Romans', chapters:16, api:'romans'}
   ];
 
+  const BOOK_ART = {"Genesis": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk0\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1b2a5a\"/><stop offset=\"1\" stop-color=\"#4a6fd1\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk0)\"/><circle cx=\"46\" cy=\"16\" r=\"7\" fill=\"#ffd95a\"/><circle cx=\"30\" cy=\"42\" r=\"18\" fill=\"#2e86d6\"/><path d=\"M20 36q6-8 14-4t6 10q-8 4-14 2t-6-8z\" fill=\"#3fb26b\"/><circle cx=\"12\" cy=\"14\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"22\" cy=\"8\" r=\"1\" fill=\"#fff\"/></svg>", "Exodus": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk1\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f3d38a\"/><stop offset=\"1\" stop-color=\"#e9a64b\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk1)\"/><rect x=\"0\" y=\"6\" width=\"20\" height=\"50\" fill=\"#2f7fd6\"/><rect x=\"44\" y=\"6\" width=\"20\" height=\"50\" fill=\"#2f7fd6\"/><path d=\"M20 56 26 6h12l6 50z\" fill=\"#d9a85a\"/><path d=\"M2 14q5-5 9 0t9 0M44 14q5-5 9 0t9 0\" stroke=\"#bfe0ff\" stroke-width=\"2\" fill=\"none\"/><rect x=\"31\" y=\"14\" width=\"2\" height=\"34\" fill=\"#6b4a2a\"/></svg>", "Leviticus": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk2\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6b3a2a\"/><stop offset=\"1\" stop-color=\"#c9733b\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk2)\"/><rect x=\"14\" y=\"38\" width=\"36\" height=\"16\" rx=\"2\" fill=\"#8a8a8a\"/><rect x=\"18\" y=\"32\" width=\"28\" height=\"8\" fill=\"#a8a8a8\"/><path d=\"M32 8q10 12 4 20-2 3-4 4-6-3-6-9 0-6 6-15z\" fill=\"#ff9a2a\"/><path d=\"M32 18q5 6 2 11-2 2-2 2-4-2-3-6 0-3 3-7z\" fill=\"#ffe27a\"/></svg>", "Numbers": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk3\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a4d6e\"/><stop offset=\"1\" stop-color=\"#4f86b5\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk3)\"/><path d=\"M4 50 20 24 36 50z\" fill=\"#e8d6a8\"/><path d=\"M28 50 44 28 60 50z\" fill=\"#d6bf8a\"/><path d=\"M20 24v26\" stroke=\"#8a6a3a\" stroke-width=\"1.5\"/><circle cx=\"12\" cy=\"12\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"30\" cy=\"9\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"50\" cy=\"14\" r=\"1.3\" fill=\"#fff\"/><rect y=\"50\" width=\"64\" height=\"14\" fill=\"#2a3a4a\"/></svg>", "Deuteronomy": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk4\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a5a2a\"/><stop offset=\"1\" stop-color=\"#d7a84b\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk4)\"/><path d=\"M10 54V22q0-12 12-12t12 12v32z\" fill=\"#f1e6c8\"/><path d=\"M30 54V26q0-12 12-12t12 12v28z\" fill=\"#e6d8b4\"/><path d=\"M16 26h12M16 32h12M16 38h12M36 30h12M36 36h12M36 42h12\" stroke=\"#8a6a3a\" stroke-width=\"2\"/></svg>", "Joshua": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk5\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#d98a4a\"/><stop offset=\"1\" stop-color=\"#f5c77e\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk5)\"/><rect x=\"2\" y=\"34\" width=\"20\" height=\"26\" fill=\"#b06a3a\"/><rect x=\"42\" y=\"34\" width=\"20\" height=\"26\" fill=\"#b06a3a\"/><path d=\"M2 34h5v-5h5v5h5v-5h5v5M42 34h5v-5h5v5h5v-5h5v5\" fill=\"none\" stroke=\"#b06a3a\" stroke-width=\"3\"/><rect x=\"27\" y=\"48\" width=\"5\" height=\"4\" fill=\"#b06a3a\" transform=\"rotate(20 30 50)\"/><path d=\"M12 18q26-8 38 14\" stroke=\"#fff3c0\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"12\" cy=\"18\" r=\"4.5\" fill=\"#ffe9a0\"/></svg>", "Judges": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk6\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3b3b5c\"/><stop offset=\"1\" stop-color=\"#6d6da8\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk6)\"/><rect x=\"30\" y=\"10\" width=\"4\" height=\"40\" fill=\"#f0d48a\"/><rect x=\"10\" y=\"14\" width=\"44\" height=\"3\" fill=\"#f0d48a\"/><path d=\"M6 36q10 10 20 0zM38 36q10 10 20 0z\" fill=\"#ffd95a\"/><path d=\"M16 17 6 36M16 17 26 36M48 17 38 36M48 17 58 36\" stroke=\"#f0d48a\" stroke-width=\"1.2\"/><rect x=\"22\" y=\"50\" width=\"20\" height=\"5\" rx=\"2\" fill=\"#f0d48a\"/></svg>", "Ruth": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk7\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f7e3a1\"/><stop offset=\"1\" stop-color=\"#f0b84a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk7)\"/><path d=\"M20 58V22M32 58V14M44 58V22\" stroke=\"#8a5a1a\" stroke-width=\"2\"/><g fill=\"#f5c542\"><ellipse cx=\"20\" cy=\"22\" rx=\"3.5\" ry=\"7\"/><ellipse cx=\"32\" cy=\"14\" rx=\"3.5\" ry=\"7\"/><ellipse cx=\"44\" cy=\"22\" rx=\"3.5\" ry=\"7\"/><ellipse cx=\"15\" cy=\"30\" rx=\"3\" ry=\"6\" transform=\"rotate(-25 15 30)\"/><ellipse cx=\"25\" cy=\"30\" rx=\"3\" ry=\"6\" transform=\"rotate(25 25 30)\"/><ellipse cx=\"39\" cy=\"30\" rx=\"3\" ry=\"6\" transform=\"rotate(-25 39 30)\"/><ellipse cx=\"49\" cy=\"30\" rx=\"3\" ry=\"6\" transform=\"rotate(25 49 30)\"/></g></svg>", "1 Samuel": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk8\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#4e8a3e\"/><stop offset=\"1\" stop-color=\"#a6d36b\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk8)\"/><path d=\"M10 14q24 40 44 0\" stroke=\"#7a4a2a\" stroke-width=\"3\" fill=\"none\"/><circle cx=\"32\" cy=\"38\" r=\"9\" fill=\"#8f8f98\"/><circle cx=\"29\" cy=\"35\" r=\"2.5\" fill=\"#b9b9c2\"/><path d=\"M0 56q16-8 32 0t32 0v8H0z\" fill=\"#3f7a2e\"/></svg>", "2 Samuel": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk9\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5b2a86\"/><stop offset=\"1\" stop-color=\"#a34fd0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk9)\"/><path d=\"M10 46V22l11 12 11-18 11 18 11-12v24z\" fill=\"#ffd23a\"/><rect x=\"10\" y=\"46\" width=\"44\" height=\"7\" rx=\"2\" fill=\"#e8a820\"/><circle cx=\"21\" cy=\"40\" r=\"2.5\" fill=\"#e0405a\"/><circle cx=\"32\" cy=\"38\" r=\"2.5\" fill=\"#3a8ad6\"/><circle cx=\"43\" cy=\"40\" r=\"2.5\" fill=\"#e0405a\"/></svg>", "1 Kings": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk10\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2f4a6b\"/><stop offset=\"1\" stop-color=\"#d9a441\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk10)\"/><path d=\"M8 26 32 10l24 16z\" fill=\"#f0d48a\"/><rect x=\"12\" y=\"28\" width=\"6\" height=\"24\" fill=\"#fff3cf\"/><rect x=\"24\" y=\"28\" width=\"6\" height=\"24\" fill=\"#fff3cf\"/><rect x=\"34\" y=\"28\" width=\"6\" height=\"24\" fill=\"#fff3cf\"/><rect x=\"46\" y=\"28\" width=\"6\" height=\"24\" fill=\"#fff3cf\"/><rect x=\"8\" y=\"52\" width=\"48\" height=\"6\" fill=\"#d9b25a\"/></svg>", "2 Kings": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk11\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a1a1a\"/><stop offset=\"1\" stop-color=\"#e0592a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk11)\"/><path d=\"M6 48h30V38h-8l-6-12H12z\" fill=\"#f4d24a\"/><circle cx=\"18\" cy=\"50\" r=\"7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3\"/><path d=\"M36 40l16-6\" stroke=\"#fff\" stroke-width=\"2.5\"/><path d=\"M48 6q14 16 4 30-4 6-10 6 8-14-2-24-2-6 8-12z\" fill=\"#ffd23a\"/></svg>", "1 Chronicles": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk12\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1d4d3a\"/><stop offset=\"1\" stop-color=\"#3d8f6b\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk12)\"/><path d=\"M32 50V30M32 30 16 20M32 30 48 20M16 20 8 10M16 20 24 10M48 20 40 10M48 20 56 10\" stroke=\"#bfeccf\" stroke-width=\"2.5\"/><g fill=\"#ffd95a\"><circle cx=\"32\" cy=\"52\" r=\"4\"/><circle cx=\"16\" cy=\"20\" r=\"4\"/><circle cx=\"48\" cy=\"20\" r=\"4\"/><circle cx=\"8\" cy=\"10\" r=\"3\"/><circle cx=\"24\" cy=\"10\" r=\"3\"/><circle cx=\"40\" cy=\"10\" r=\"3\"/><circle cx=\"56\" cy=\"10\" r=\"3\"/></g></svg>", "2 Chronicles": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk13\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a4a2a\"/><stop offset=\"1\" stop-color=\"#e8c76a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk13)\"/><path d=\"M14 36q18-30 36 0z\" fill=\"#ffd95a\"/><rect x=\"14\" y=\"36\" width=\"36\" height=\"18\" fill=\"#f5e8c0\"/><path d=\"M26 54V44q6-6 12 0v10z\" fill=\"#8a5a2a\"/><rect x=\"31\" y=\"6\" width=\"2\" height=\"8\" fill=\"#ffd95a\"/><rect x=\"28\" y=\"9\" width=\"8\" height=\"2\" fill=\"#ffd95a\"/></svg>", "Ezra": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk14\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6b4a3a\"/><stop offset=\"1\" stop-color=\"#b9824f\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk14)\"/><g fill=\"#c9834a\"><rect x=\"6\" y=\"40\" width=\"24\" height=\"10\" rx=\"1\"/><rect x=\"32\" y=\"40\" width=\"26\" height=\"10\" rx=\"1\"/><rect x=\"14\" y=\"29\" width=\"24\" height=\"10\" rx=\"1\"/><rect x=\"40\" y=\"29\" width=\"18\" height=\"10\" rx=\"1\"/><rect x=\"22\" y=\"18\" width=\"24\" height=\"10\" rx=\"1\"/></g><path d=\"M8 56h48\" stroke=\"#4a2a1a\" stroke-width=\"3\"/></svg>", "Nehemiah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk15\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a5a7a\"/><stop offset=\"1\" stop-color=\"#8fb6d9\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk15)\"/><path d=\"M4 54V24h8v6h8v-6h8v6h8v-6h8v6h8v-6h8v30z\" fill=\"#c9b99a\"/><rect x=\"26\" y=\"38\" width=\"12\" height=\"16\" rx=\"6\" fill=\"#6a4a2a\"/><path d=\"M10 38h8M44 38h8M10 46h8M44 46h8\" stroke=\"#a69676\" stroke-width=\"2\"/></svg>", "Esther": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk16\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8a1f5a\"/><stop offset=\"1\" stop-color=\"#e0618f\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk16)\"/><path d=\"M32 6l5 11 12 1-9 8 3 12-11-7-11 7 3-12-9-8 12-1z\" fill=\"#ffd95a\"/><path d=\"M14 58V46l9 6 9-12 9 12 9-6v12z\" fill=\"#fff\"/></svg>", "Job": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk17\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a2a3a\"/><stop offset=\"1\" stop-color=\"#6a6a82\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk17)\"/><path d=\"M14 36q-10 0-10-9t10-9q4-10 16-8t14 10q14 0 14 8t-12 8z\" fill=\"#c9c9d6\"/><path d=\"M34 34 26 48h8l-6 14 16-20h-9l7-8z\" fill=\"#ffd23a\"/></svg>", "Psalms": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk18\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1f6a6a\"/><stop offset=\"1\" stop-color=\"#6fd0c0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk18)\"/><path d=\"M18 52Q10 28 28 12q10 4 4 20-2 12 14 14z\" fill=\"#ffd95a\"/><path d=\"M24 20 26 48M28 18 32 46M32 22 38 44M36 26 42 42\" stroke=\"#fff\" stroke-width=\"1.2\"/><circle cx=\"50\" cy=\"16\" r=\"3\" fill=\"#fff\"/><path d=\"M53 16V6l5 2\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\"/></svg>", "Proverbs": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk19\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#c98a1a\"/><stop offset=\"1\" stop-color=\"#ffe08a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk19)\"/><circle cx=\"32\" cy=\"26\" r=\"15\" fill=\"#fff5b0\"/><path d=\"M26 38h12v8H26z\" fill=\"#c9c9c9\"/><rect x=\"27\" y=\"48\" width=\"10\" height=\"4\" rx=\"2\" fill=\"#9a9a9a\"/><path d=\"M10 10l6 6M54 10l-6 6M6 26h6M52 26h6\" stroke=\"#fff\" stroke-width=\"2.5\"/></svg>", "Ecclesiastes": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk20\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#4a3a6a\"/><stop offset=\"1\" stop-color=\"#9a86c9\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk20)\"/><path d=\"M16 8h32M16 56h32\" stroke=\"#e8dcff\" stroke-width=\"4\"/><path d=\"M18 10h28q0 16-14 22 14 6 14 22H18q0-16 14-22-14-6-14-22z\" fill=\"none\" stroke=\"#e8dcff\" stroke-width=\"2.5\"/><path d=\"M24 14h16q-2 8-8 12-6-4-8-12z\" fill=\"#ffd95a\"/><path d=\"M22 52q4-10 10-10t10 10z\" fill=\"#ffd95a\"/></svg>", "Song of Solomon": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk21\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a1f3a\"/><stop offset=\"1\" stop-color=\"#f27a9a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk21)\"/><path d=\"M32 54C8 36 10 14 24 14c5 0 8 3 8 6 0-3 3-6 8-6 14 0 16 22-8 40z\" fill=\"#ff5a7a\"/><circle cx=\"32\" cy=\"30\" r=\"6\" fill=\"#ffb3c4\"/></svg>", "Isaiah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk22\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a2a5a\"/><stop offset=\"1\" stop-color=\"#7a9ae0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk22)\"/><path d=\"M10 40q8-16 22-12 6-10 16-8-4 6-2 10 8 2 10 8-10 0-14 4-10 8-24 4z\" fill=\"#fff\"/><path d=\"M26 30q-4-10 6-18-2 10 6 16z\" fill=\"#e8eeff\"/><circle cx=\"44\" cy=\"26\" r=\"1.2\" fill=\"#1a2a5a\"/><path d=\"M50 26l5 1-5 2z\" fill=\"#ffb02a\"/></svg>", "Jeremiah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk23\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2a\"/><stop offset=\"1\" stop-color=\"#d99a5a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk23)\"/><path d=\"M24 10h16v6q14 6 14 22 0 18-22 18T10 38q0-16 14-22z\" fill=\"#d9834a\"/><path d=\"M20 30q12 6 24 0\" stroke=\"#8a4a1a\" stroke-width=\"2.5\" fill=\"none\"/><ellipse cx=\"32\" cy=\"10\" rx=\"9\" ry=\"3\" fill=\"#b0643a\"/></svg>", "Lamentations": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk24\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a3a4a\"/><stop offset=\"1\" stop-color=\"#5a7a9a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk24)\"/><path d=\"M32 8q18 22 18 32a18 18 0 0 1-36 0q0-10 18-32z\" fill=\"#7ac0ff\"/><path d=\"M24 40q0 8 8 10\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\"/></svg>", "Ezekiel": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk25\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a1a3a\"/><stop offset=\"1\" stop-color=\"#5a3ab0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk25)\"/><circle cx=\"32\" cy=\"32\" r=\"22\" fill=\"none\" stroke=\"#ffd95a\" stroke-width=\"4\"/><circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3\"/><circle cx=\"32\" cy=\"32\" r=\"4\" fill=\"#ffd95a\"/><path d=\"M32 10v44M10 32h44M16 16l32 32M48 16 16 48\" stroke=\"#ffd95a\" stroke-width=\"1.5\"/></svg>", "Daniel": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk26\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8a5a1a\"/><stop offset=\"1\" stop-color=\"#e0a84a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk26)\"/><circle cx=\"32\" cy=\"32\" r=\"24\" fill=\"#d9751a\"/><circle cx=\"32\" cy=\"34\" r=\"16\" fill=\"#f2b45a\"/><circle cx=\"26\" cy=\"30\" r=\"2\" fill=\"#3a2a1a\"/><circle cx=\"38\" cy=\"30\" r=\"2\" fill=\"#3a2a1a\"/><path d=\"M28 38h8l-4 4z\" fill=\"#3a2a1a\"/><path d=\"M32 42v4M26 48q6 4 12 0\" stroke=\"#3a2a1a\" stroke-width=\"2\" fill=\"none\"/><circle cx=\"20\" cy=\"20\" r=\"4\" fill=\"#f2b45a\"/><circle cx=\"44\" cy=\"20\" r=\"4\" fill=\"#f2b45a\"/></svg>", "Hosea": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk27\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a1a2a\"/><stop offset=\"1\" stop-color=\"#c0405a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk27)\"/><path d=\"M32 54C8 36 10 14 24 14c5 0 8 3 8 6 0-3 3-6 8-6 14 0 16 22-8 40z\" fill=\"#e0405a\"/><path d=\"M32 18l-6 12 8 6-6 14\" stroke=\"#5a1a2a\" stroke-width=\"3\" fill=\"none\"/></svg>", "Joel": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk28\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a8a2a\"/><stop offset=\"1\" stop-color=\"#cfd96a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk28)\"/><ellipse cx=\"32\" cy=\"34\" rx=\"14\" ry=\"6\" fill=\"#4a7a1a\"/><circle cx=\"48\" cy=\"32\" r=\"5\" fill=\"#4a7a1a\"/><path d=\"M26 30q-4-14 8-18-2 8 2 16z\" fill=\"#a9cf4a\"/><path d=\"M20 38 10 52M28 40 22 54M36 40 40 54\" stroke=\"#2a4a0a\" stroke-width=\"2\"/><path d=\"M50 28 58 18\" stroke=\"#2a4a0a\" stroke-width=\"1.5\"/></svg>", "Amos": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk29\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8a4a1a\"/><stop offset=\"1\" stop-color=\"#f0a84a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk29)\"/><circle cx=\"24\" cy=\"24\" r=\"8\" fill=\"#e0405a\"/><circle cx=\"38\" cy=\"22\" r=\"8\" fill=\"#ffd23a\"/><circle cx=\"31\" cy=\"32\" r=\"8\" fill=\"#8ad04a\"/><path d=\"M10 34h44l-6 22H16z\" fill=\"#a8672a\"/><path d=\"M14 42h36M16 49h32\" stroke=\"#6a3f12\" stroke-width=\"2\"/></svg>", "Obadiah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk30\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a3a5a\"/><stop offset=\"1\" stop-color=\"#8fa6c9\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk30)\"/><path d=\"M0 58 24 20l8 10 12-20 20 48z\" fill=\"#8f9ab0\"/><path d=\"M18 30l6-10 8 10-4-3-4 4-4-4zM38 22l6-12 6 12-3-2-3 4-3-4z\" fill=\"#fff\"/><circle cx=\"50\" cy=\"10\" r=\"4\" fill=\"#fff5c0\"/></svg>", "Jonah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk31\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0b3a6a\"/><stop offset=\"1\" stop-color=\"#2f90d6\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk31)\"/><path d=\"M4 42q4-18 26-18 14 0 22 10l8-8v20l-8-6q-8 12-26 12-18 0-22-10z\" fill=\"#9ac0e0\"/><circle cx=\"16\" cy=\"38\" r=\"2\" fill=\"#0b2a4a\"/><path d=\"M34 22q-4-10-10-12M34 22q2-10 10-12\" stroke=\"#fff\" stroke-width=\"2.5\" fill=\"none\"/><path d=\"M0 54q8-4 16 0t16 0t16 0t16 0v10H0z\" fill=\"#0e5a9a\"/></svg>", "Micah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk32\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a2a4a\"/><stop offset=\"1\" stop-color=\"#4a6ab0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk32)\"/><path d=\"M32 4l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z\" fill=\"#ffd95a\"/><path d=\"M0 58V44q16-10 32 0t32 0v14z\" fill=\"#6a8a4a\"/><rect x=\"10\" y=\"38\" width=\"12\" height=\"10\" fill=\"#e8d6a8\"/><path d=\"M8 38l8-6 8 6z\" fill=\"#b06a3a\"/><rect x=\"40\" y=\"36\" width=\"14\" height=\"12\" fill=\"#e8d6a8\"/><path d=\"M38 36l9-7 9 7z\" fill=\"#b06a3a\"/></svg>", "Nahum": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk33\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a2a4a\"/><stop offset=\"1\" stop-color=\"#8a6a9a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk33)\"/><rect x=\"8\" y=\"30\" width=\"10\" height=\"26\" fill=\"#cfc0d9\"/><rect x=\"22\" y=\"24\" width=\"12\" height=\"32\" fill=\"#e0d4e8\"/><rect x=\"38\" y=\"32\" width=\"8\" height=\"24\" fill=\"#cfc0d9\"/><rect x=\"48\" y=\"26\" width=\"10\" height=\"30\" fill=\"#e0d4e8\"/><path d=\"M40 4 30 22h8l-6 14 14-18h-8l6-14z\" fill=\"#ffd23a\"/></svg>", "Habakkuk": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk34\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a4a5a\"/><stop offset=\"1\" stop-color=\"#9ac0d0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk34)\"/><path d=\"M22 56 26 20h12l4 36z\" fill=\"#d9c9a0\"/><path d=\"M20 20h24l-2-8H22z\" fill=\"#a8885a\"/><rect x=\"28\" y=\"28\" width=\"8\" height=\"10\" rx=\"4\" fill=\"#4a3a2a\"/><path d=\"M32 4v8M32 4h8l-2 3 2 3h-8\" fill=\"#e0405a\" stroke=\"#e0405a\"/></svg>", "Zephaniah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk35\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8a8a9a\"/><stop offset=\"1\" stop-color=\"#e0d0b0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk35)\"/><circle cx=\"42\" cy=\"20\" r=\"10\" fill=\"#ffd95a\"/><path d=\"M14 48q-10 0-10-8t10-8q4-8 14-6t12 8q12 0 12 7t-10 7z\" fill=\"#fff\"/><path d=\"M8 54h48M14 59h36\" stroke=\"#fff\" stroke-width=\"2\" opacity=\".6\"/></svg>", "Haggai": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk36\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a5a4a\"/><stop offset=\"1\" stop-color=\"#a9a98a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk36)\"/><g transform=\"rotate(35 32 32)\"><rect x=\"29\" y=\"14\" width=\"6\" height=\"42\" rx=\"2\" fill=\"#8a5a2a\"/><rect x=\"16\" y=\"8\" width=\"32\" height=\"12\" rx=\"2\" fill=\"#9aa0aa\"/></g><rect x=\"6\" y=\"50\" width=\"20\" height=\"8\" fill=\"#c9c9a0\"/><rect x=\"38\" y=\"50\" width=\"20\" height=\"8\" fill=\"#c9c9a0\"/></svg>", "Zechariah": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk37\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a1a2a\"/><stop offset=\"1\" stop-color=\"#4a3a7a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk37)\"/><path d=\"M32 12v40M32 44Q10 44 10 20M32 44Q54 44 54 20M32 44Q20 44 20 20M32 44Q44 44 44 20\" stroke=\"#ffd95a\" stroke-width=\"3\" fill=\"none\"/><rect x=\"20\" y=\"52\" width=\"24\" height=\"5\" rx=\"2\" fill=\"#ffd95a\"/><g fill=\"#ff9a2a\"><circle cx=\"10\" cy=\"14\" r=\"3\"/><circle cx=\"20\" cy=\"14\" r=\"3\"/><circle cx=\"32\" cy=\"8\" r=\"3\"/><circle cx=\"44\" cy=\"14\" r=\"3\"/><circle cx=\"54\" cy=\"14\" r=\"3\"/></g></svg>", "Malachi": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk38\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a5a4a\"/><stop offset=\"1\" stop-color=\"#7ad0a0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk38)\"/><rect x=\"8\" y=\"16\" width=\"48\" height=\"34\" rx=\"4\" fill=\"#fff\"/><path d=\"M8 20l24 18 24-18\" stroke=\"#2a8a5a\" stroke-width=\"3\" fill=\"none\"/><circle cx=\"48\" cy=\"46\" r=\"8\" fill=\"#ffd23a\"/><path d=\"M45 46l2 2 4-4\" stroke=\"#7a5a0a\" stroke-width=\"2\" fill=\"none\"/></svg>", "Matthew": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk39\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0a1a4a\"/><stop offset=\"1\" stop-color=\"#3a5ad0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk39)\"/><path d=\"M32 4l6 20 20 4-16 12 5 20-15-12-15 12 5-20L6 28l20-4z\" fill=\"#ffd95a\"/><path d=\"M0 58q16-8 32 0t32 0v6H0z\" fill=\"#1a2a5a\"/></svg>", "Mark": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk40\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#b03a1a\"/><stop offset=\"1\" stop-color=\"#ff8a4a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk40)\"/><path d=\"M10 14l16 18-16 18M28 14l16 18-16 18M46 14l14 18-14 18\" fill=\"none\" stroke=\"#fff\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>", "Luke": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk41\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a6a3a\"/><stop offset=\"1\" stop-color=\"#9ad07a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk41)\"/><path d=\"M8 20q4 8 12 8M56 20q-4 8-12 8\" stroke=\"#f5ecd0\" stroke-width=\"4\" fill=\"none\"/><rect x=\"16\" y=\"22\" width=\"32\" height=\"30\" rx=\"14\" fill=\"#8a5a3a\"/><ellipse cx=\"32\" cy=\"46\" rx=\"12\" ry=\"8\" fill=\"#e8c9a0\"/><circle cx=\"28\" cy=\"46\" r=\"1.5\" fill=\"#3a2a1a\"/><circle cx=\"36\" cy=\"46\" r=\"1.5\" fill=\"#3a2a1a\"/><circle cx=\"24\" cy=\"34\" r=\"2\" fill=\"#fff\"/><circle cx=\"40\" cy=\"34\" r=\"2\" fill=\"#fff\"/></svg>", "John": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk42\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a4a8a\"/><stop offset=\"1\" stop-color=\"#7ac0f0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk42)\"/><path d=\"M32 16 20 28 4 22q4 14 16 20l12 8 12-8q12-6 16-20l-16 6z\" fill=\"#f0e6d0\"/><circle cx=\"32\" cy=\"22\" r=\"8\" fill=\"#fff\"/><path d=\"M34 22l8 3-8 3z\" fill=\"#ffb02a\"/><circle cx=\"30\" cy=\"20\" r=\"1.5\" fill=\"#1a2a4a\"/></svg>", "Acts": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk43\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a1a1a\"/><stop offset=\"1\" stop-color=\"#ff7a3a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk43)\"/><path d=\"M32 6q18 18 8 34-4 8-8 8-12-6-10-20 2-8 10-22z\" fill=\"#ff8a2a\"/><path d=\"M32 22q8 10 4 20-2 4-4 4-6-4-4-12 0-6 4-12z\" fill=\"#ffe27a\"/><path d=\"M8 54h48\" stroke=\"#fff\" stroke-width=\"3\" opacity=\".7\"/></svg>", "Romans": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk44\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6a5a4a\"/><stop offset=\"1\" stop-color=\"#d9c9a9\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk44)\"/><path d=\"M26 8h12l22 52H4z\" fill=\"#6a5a4a\"/><path d=\"M32 12v8M32 28v10M32 46v14\" stroke=\"#ffd95a\" stroke-width=\"3\"/><circle cx=\"52\" cy=\"14\" r=\"5\" fill=\"#fff5c0\"/></svg>", "1 Corinthians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk45\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#b0205a\"/><stop offset=\"1\" stop-color=\"#ff7aa0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk45)\"/><path d=\"M32 52C10 36 12 16 24 16c5 0 8 3 8 6 0-3 3-6 8-6 12 0 14 20-8 36z\" fill=\"#fff\"/><path d=\"M32 46C18 36 18 24 25 24c3 0 7 3 7 6 0-3 4-6 7-6 7 0 7 12-7 22z\" fill=\"#e0306a\"/></svg>", "2 Corinthians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk46\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a6a8a\"/><stop offset=\"1\" stop-color=\"#8ac0e0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk46)\"/><rect x=\"4\" y=\"26\" width=\"30\" height=\"12\" rx=\"6\" fill=\"#f2c9a0\" transform=\"rotate(-10 19 32)\"/><rect x=\"30\" y=\"26\" width=\"30\" height=\"12\" rx=\"6\" fill=\"#d9a070\" transform=\"rotate(10 45 32)\"/><circle cx=\"32\" cy=\"32\" r=\"7\" fill=\"#fff\" opacity=\".9\"/></svg>", "Galatians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk47\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a6a7a\"/><stop offset=\"1\" stop-color=\"#cfd9e0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk47)\"/><ellipse cx=\"14\" cy=\"32\" rx=\"9\" ry=\"6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\"/><ellipse cx=\"26\" cy=\"32\" rx=\"9\" ry=\"6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\" stroke-dasharray=\"30 8\"/><ellipse cx=\"42\" cy=\"32\" rx=\"9\" ry=\"6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\" transform=\"rotate(25 42 32)\"/><ellipse cx=\"54\" cy=\"32\" rx=\"8\" ry=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\"/><path d=\"M32 18l-2 6M34 46l2-6\" stroke=\"#ffd95a\" stroke-width=\"2.5\"/></svg>", "Ephesians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk48\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a3a6a\"/><stop offset=\"1\" stop-color=\"#8a8ae0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk48)\"/><path d=\"M32 6 54 14v18q0 16-22 26Q10 48 10 32V14z\" fill=\"#c9cdf5\"/><path d=\"M32 12 48 18v14q0 12-16 20-16-8-16-20V18z\" fill=\"#4a4ac0\"/><path d=\"M32 20v26M23 28h18\" stroke=\"#fff\" stroke-width=\"4\"/></svg>", "Philippians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk49\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f0b020\"/><stop offset=\"1\" stop-color=\"#ffe070\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk49)\"/><path d=\"M32 4v6M32 54v6M4 32h6M54 32h6M12 12l4 4M48 48l4 4M52 12l-4 4M12 52l4-4\" stroke=\"#fff\" stroke-width=\"3\"/><circle cx=\"32\" cy=\"32\" r=\"16\" fill=\"#fff0a0\"/><circle cx=\"26\" cy=\"28\" r=\"2\" fill=\"#7a4a0a\"/><circle cx=\"38\" cy=\"28\" r=\"2\" fill=\"#7a4a0a\"/><path d=\"M24 36q8 8 16 0\" stroke=\"#7a4a0a\" stroke-width=\"2.5\" fill=\"none\"/></svg>", "Colossians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk50\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a3a6a\"/><stop offset=\"1\" stop-color=\"#b08ad0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk50)\"/><rect x=\"8\" y=\"8\" width=\"48\" height=\"48\" rx=\"4\" fill=\"#e8d6a8\"/><rect x=\"14\" y=\"14\" width=\"36\" height=\"36\" fill=\"#6a4a8a\"/><circle cx=\"32\" cy=\"28\" r=\"7\" fill=\"#ffd95a\"/><path d=\"M14 50l12-14 8 8 8-10 8 16z\" fill=\"#a98ad0\"/></svg>", "1 Thessalonians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk51\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a8ad0\"/><stop offset=\"1\" stop-color=\"#c0e0ff\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk51)\"/><path d=\"M14 42q-10 0-10-9t10-9q4-10 16-8t14 10q14 0 14 8t-12 8z\" fill=\"#fff\"/><path d=\"M26 54l6-8 6 8M32 46v10\" stroke=\"#ffd95a\" stroke-width=\"3\" fill=\"none\"/><circle cx=\"50\" cy=\"12\" r=\"5\" fill=\"#fff5b0\"/></svg>", "2 Thessalonians": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk52\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#3a4a5a\"/><stop offset=\"1\" stop-color=\"#8a9aaa\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk52)\"/><circle cx=\"32\" cy=\"32\" r=\"24\" fill=\"#f2f2f2\"/><circle cx=\"32\" cy=\"32\" r=\"20\" fill=\"none\" stroke=\"#3a4a5a\" stroke-width=\"2\"/><path d=\"M32 18v14l9 6\" stroke=\"#3a4a5a\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"32\" cy=\"32\" r=\"2.5\" fill=\"#e0405a\"/></svg>", "1 Timothy": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk53\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a6a4a\"/><stop offset=\"1\" stop-color=\"#7ad0a0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk53)\"/><path d=\"M32 58V30\" stroke=\"#2a8a3a\" stroke-width=\"4\"/><path d=\"M32 34q-18 0-20-16 18-2 20 16zM32 30q18-2 20-18-18 0-20 18z\" fill=\"#7ae08a\"/><path d=\"M12 58q20-8 40 0v6H12z\" fill=\"#7a4a2a\"/></svg>", "2 Timothy": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk54\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#4a3a2a\"/><stop offset=\"1\" stop-color=\"#a98a5a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk54)\"/><path d=\"M52 6Q24 8 14 40l-4 14 14-6q22-6 28-42z\" fill=\"#f5ecd0\"/><path d=\"M52 6 14 48\" stroke=\"#a9884a\" stroke-width=\"2\"/><path d=\"M8 58h18\" stroke=\"#2a1a0a\" stroke-width=\"3\"/></svg>", "Titus": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk55\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a8ac0\"/><stop offset=\"1\" stop-color=\"#7ae0f0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk55)\"/><path d=\"M0 54q32-10 64 0v10H0z\" fill=\"#f2d68a\"/><path d=\"M32 54Q28 36 34 20\" stroke=\"#8a5a2a\" stroke-width=\"4\" fill=\"none\"/><path d=\"M34 20q-14-10-26 0 12-2 26 0zM34 20q14-10 26 0-12-2-26 0zM34 20q-8-14-18-14 10 4 18 14zM34 20q8-14 18-14-10 4-18 14z\" fill=\"#2a9a4a\"/><circle cx=\"52\" cy=\"12\" r=\"5\" fill=\"#fff5c0\"/></svg>", "Philemon": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk56\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a3a\"/><stop offset=\"1\" stop-color=\"#d9a98a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk56)\"/><rect x=\"10\" y=\"14\" width=\"44\" height=\"36\" rx=\"3\" fill=\"#fff5dc\"/><path d=\"M16 24h32M16 30h32M16 36h22\" stroke=\"#a98a5a\" stroke-width=\"2\"/><circle cx=\"44\" cy=\"44\" r=\"7\" fill=\"#d9302a\"/><path d=\"M41 44h6M44 41v6\" stroke=\"#fff\" stroke-width=\"2\"/></svg>", "Hebrews": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk57\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#4a1a5a\"/><stop offset=\"1\" stop-color=\"#c04aa0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk57)\"/><path d=\"M4 54 32 12l28 42z\" fill=\"#e8c27a\"/><path d=\"M24 54V36q8-10 16 0v18z\" fill=\"#6a1a4a\"/><path d=\"M32 12v10\" stroke=\"#fff\" stroke-width=\"2\"/><rect y=\"54\" width=\"64\" height=\"10\" fill=\"#4a1a5a\"/></svg>", "James": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk58\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a5a7a\"/><stop offset=\"1\" stop-color=\"#7ac0e0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk58)\"/><ellipse cx=\"32\" cy=\"26\" rx=\"16\" ry=\"20\" fill=\"#e0f4ff\" stroke=\"#d9a84a\" stroke-width=\"4\"/><path d=\"M24 16q6-4 12 0\" stroke=\"#fff\" stroke-width=\"3\" fill=\"none\"/><rect x=\"29\" y=\"46\" width=\"6\" height=\"14\" rx=\"3\" fill=\"#d9a84a\"/></svg>", "1 Peter": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk59\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a5a8a\"/><stop offset=\"1\" stop-color=\"#4ab0d0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk59)\"/><path d=\"M6 32q16-18 36 0-20 18-36 0z\" fill=\"#ffd95a\"/><path d=\"M42 32l16-12v24z\" fill=\"#e8a020\"/><circle cx=\"16\" cy=\"30\" r=\"2\" fill=\"#1a3a5a\"/><path d=\"M0 10q8-4 16 0t16 0t16 0t16 0M0 54q8-4 16 0t16 0t16 0t16 0\" stroke=\"#bfe8ff\" stroke-width=\"2\" fill=\"none\"/></svg>", "2 Peter": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk60\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0a0a2a\"/><stop offset=\"1\" stop-color=\"#3a2a6a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk60)\"/><path d=\"M52 12 8 44\" stroke=\"#fff\" stroke-width=\"8\" stroke-linecap=\"round\" opacity=\".25\"/><path d=\"M52 12 20 36\" stroke=\"#fff\" stroke-width=\"4\" stroke-linecap=\"round\" opacity=\".5\"/><circle cx=\"52\" cy=\"12\" r=\"7\" fill=\"#fff5b0\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\" fill=\"#fff\"/><circle cx=\"20\" cy=\"52\" r=\"1.4\" fill=\"#fff\"/><circle cx=\"54\" cy=\"48\" r=\"1.4\" fill=\"#fff\"/></svg>", "1 John": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk61\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f0c020\"/><stop offset=\"1\" stop-color=\"#fff0a0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk61)\"/><path d=\"M32 4v8M32 52v8M4 32h8M52 32h8M12 12l6 6M46 46l6 6M52 12l-6 6M12 52l6-6\" stroke=\"#fff\" stroke-width=\"3\" stroke-linecap=\"round\"/><circle cx=\"32\" cy=\"32\" r=\"14\" fill=\"#fff\"/><path d=\"M32 40C24 34 25 26 29 26c2 0 3 1 3 2 0-1 1-2 3-2 4 0 5 8-3 14z\" fill=\"#e8a020\"/></svg>", "2 John": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk62\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5a3a2a\"/><stop offset=\"1\" stop-color=\"#b98a5a\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk62)\"/><rect x=\"14\" y=\"8\" width=\"36\" height=\"50\" rx=\"3\" fill=\"#8a5a2a\"/><rect x=\"20\" y=\"14\" width=\"24\" height=\"16\" rx=\"2\" fill=\"#a9743a\"/><rect x=\"20\" y=\"34\" width=\"24\" height=\"18\" rx=\"2\" fill=\"#a9743a\"/><circle cx=\"43\" cy=\"36\" r=\"2.5\" fill=\"#ffd95a\"/></svg>", "3 John": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk63\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#2a4a4a\"/><stop offset=\"1\" stop-color=\"#7ab0b0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk63)\"/><circle cx=\"32\" cy=\"32\" r=\"24\" fill=\"#f2f2f2\" stroke=\"#2a6a6a\" stroke-width=\"4\"/><path d=\"M32 12l7 20-7 4-7-4z\" fill=\"#e0405a\"/><path d=\"M32 52l-7-20 7-4 7 4z\" fill=\"#2a6a6a\"/><circle cx=\"32\" cy=\"32\" r=\"2.5\" fill=\"#fff\"/></svg>", "Jude": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk64\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#0a3a6a\"/><stop offset=\"1\" stop-color=\"#2a7ac0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk64)\"/><circle cx=\"32\" cy=\"12\" r=\"5\" fill=\"none\" stroke=\"#fff\" stroke-width=\"3.5\"/><path d=\"M32 17v38M22 26h20\" stroke=\"#fff\" stroke-width=\"3.5\" stroke-linecap=\"round\"/><path d=\"M10 40q4 16 22 16t22-16\" stroke=\"#fff\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/></svg>", "Revelation": "<svg viewBox=\"0 0 64 64\" width=\"100%\" height=\"100%\" aria-hidden=\"true\"><defs><linearGradient id=\"bk65\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#1a0a4a\"/><stop offset=\"1\" stop-color=\"#6a3ad0\"/></linearGradient></defs><rect width=\"64\" height=\"64\" fill=\"url(#bk65)\"/><path d=\"M6 46a26 26 0 0 1 52 0\" stroke=\"#e0405a\" stroke-width=\"5\" fill=\"none\"/><path d=\"M12 46a20 20 0 0 1 40 0\" stroke=\"#ffb02a\" stroke-width=\"5\" fill=\"none\"/><path d=\"M18 46a14 14 0 0 1 28 0\" stroke=\"#4ac06a\" stroke-width=\"5\" fill=\"none\"/><path d=\"M24 46a8 8 0 0 1 16 0\" stroke=\"#4a8af0\" stroke-width=\"5\" fill=\"none\"/><rect x=\"26\" y=\"46\" width=\"12\" height=\"8\" fill=\"#ffd95a\"/><circle cx=\"10\" cy=\"10\" r=\"1.4\" fill=\"#fff\"/><circle cx=\"54\" cy=\"12\" r=\"1.4\" fill=\"#fff\"/><circle cx=\"32\" cy=\"8\" r=\"1.4\" fill=\"#fff\"/></svg>"};
+  const bookArt = n => BOOK_ART[n] || String(n).replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase();
   const ALL_BOOKS = [
     {name:'Genesis', id:'GEN', chapters:50, testament:'OT'}, {name:'Exodus', id:'EXO', chapters:40, testament:'OT'},
     {name:'Leviticus', id:'LEV', chapters:27, testament:'OT'}, {name:'Numbers', id:'NUM', chapters:36, testament:'OT'},
@@ -4037,51 +4081,25 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   const TAB_SCREENS = ['screen-dash','screen-search','screen-saved','screen-profile'];
   function iosScreenTransition(prev, next, isBack){
     if(!prev || !next || prev === next || !next.animate) return;
-    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    [prev, next].forEach(el => { el.getAnimations().forEach(a => a.cancel()); });
-    const SPRING = 'cubic-bezier(.32,.72,0,1)';
+    [prev, next].forEach(el => { try{ el.getAnimations().forEach(a => a.cancel()); }catch(e){} });
+    // Premium / payment screens: NO transition or motion, in or out.
+    const NO_MOTION = ['screen-premium','screen-premium-intro','screen-donate'];
+    if(NO_MOTION.includes(prev.id) || NO_MOTION.includes(next.id)) return;
+    // WhatsApp-style motion: a short fade with a small slide, then it settles. No stacked layers, no spring.
+    const EASE = 'cubic-bezier(.2,0,0,1)';
     const bothTabs = TAB_SCREENS.includes(prev.id) && TAB_SCREENS.includes(next.id);
     const quiet = NAV_SKIP.includes(prev.id) || NAV_SKIP.includes(next.id);
-    if(reduce || bothTabs || quiet){
-      next.animate([{opacity:0, transform:'scale(.985)'},{opacity:1, transform:'none'}], {duration:320, easing:SPRING});
-      prev.animate([{opacity:1},{opacity:0}], {duration:200, easing:'ease-out'});
+    if(bothTabs || quiet){
+      next.animate([{opacity:0},{opacity:1}], {duration:180, easing:'ease-out'});
+      prev.animate([{opacity:1},{opacity:0}], {duration:100, easing:'linear'});
       return;
     }
-    // SMOOTH TRANSITIONS (fix for the jerky Premium / dashboard loading):
-    //  1. Only transform + opacity are animated, so the phone's GPU does all the work.
-    //     (The old version also animated brightness filters and a 40px shadow on
-    //     full-screen layers, which made slower phones drop most of the frames.)
-    //  2. The animation starts paused on its first frame and only plays after the
-    //     browser has painted the new screen, so the slide is never "eaten" by the
-    //     first-paint work and the page no longer jumps in at the end.
-    const dur = 340;
-    prev.style.willChange = next.style.willChange = 'transform, opacity';
-    prev.style.zIndex = isBack ? 2 : 1; next.style.zIndex = isBack ? 1 : 2;
-    const opt = {duration:dur, easing:SPRING, fill:'backwards'};
-    let anims;
-    if(!isBack){            // PUSH
-      anims = [
-        next.animate([{transform:'translate3d(100%,0,0)'},{transform:'translate3d(0,0,0)'}], opt),
-        prev.animate([
-          {transform:'translate3d(0,0,0)', opacity:1, offset:0},
-          {transform:'translate3d(-25%,0,0)', opacity:1, offset:.96},
-          {transform:'translate3d(-25%,0,0)', opacity:0, offset:1}
-        ], opt)
-      ];
-    }else{                  // POP
-      anims = [
-        next.animate([{transform:'translate3d(-25%,0,0)'},{transform:'translate3d(0,0,0)'}], opt),
-        prev.animate([
-          {transform:'translate3d(0,0,0)', opacity:1, offset:0},
-          {transform:'translate3d(100%,0,0)', opacity:1, offset:.96},
-          {transform:'translate3d(100%,0,0)', opacity:0, offset:1}
-        ], opt)
-      ];
-    }
-    const cleanup = () => { prev.style.zIndex = ''; next.style.zIndex = ''; prev.style.willChange = ''; next.style.willChange = ''; };
-    anims[1].onfinish = anims[1].oncancel = cleanup;
-    anims.forEach(a => a.pause());
-    requestAnimationFrame(() => requestAnimationFrame(() => { anims.forEach(a => { try{ a.play(); }catch(e){} }); }));
+    const dx = isBack ? -28 : 28;
+    prev.style.zIndex = 1; next.style.zIndex = 2;
+    const inA = next.animate([{opacity:0, transform:'translate3d('+dx+'px,0,0)'},{opacity:1, transform:'none'}], {duration:260, easing:EASE, fill:'backwards'});
+    const outA = prev.animate([{opacity:1},{opacity:0}], {duration:110, easing:'linear'});
+    const cleanup = () => { prev.style.zIndex = ''; next.style.zIndex = ''; };
+    inA.onfinish = inA.oncancel = cleanup;
   }
   function showScreen(id){
     id = gateRedirect(id);
@@ -4550,10 +4568,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
       el.textContent = `Go Premium · ${formatVipMoney(vipDisplayCurrency, vipDisplayAmount)} / 3 months`;
     });
     document.querySelectorAll('.vip-currency-note').forEach(el => {
-      el.textContent = foreign
-        ? `Shown in ${vipDisplayCurrency} for convenience. Paystack charges ₦${VIP_PRICE_NGN.toLocaleString('en-NG')} securely and your bank converts it automatically.`
-        : '';
-      el.style.display = el.textContent ? '' : 'none';
+      el.textContent = '';
+      el.style.display = 'none';
     });
   }
 
@@ -6884,7 +6900,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     BOOKS.forEach(b=>{
       const el = document.createElement('div');
       el.className = 'book-chip';
-      el.innerHTML = `<div class="bc-num">${b.ab}</div><span>${b.name}</span><p>${b.chapters} chapters</p>`;
+      el.innerHTML = `<div class="bc-num">${bookArt(b.name)}</div><span>${b.name}</span><p>${b.chapters} chapters</p>`;
       el.addEventListener('click', () => openReader(b.name, 1, b.api));
       wrap.appendChild(el);
     });
@@ -7035,9 +7051,28 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     try{ localizeChapter(); }catch(e){}
   }
 
-  function toggleVerseSave(book, chapter, num, text, btnEl){
+  // Ask how to save: normal save, or save + jump to the reminder form with details already filled in.
+  function askSaveMode(ref, doSave, kind){
+    const ov = document.createElement('div'); ov.className = 'vp-overlay'; ov.style.display = 'none';
+    ov.innerHTML = '<div class="vp-sheet" role="dialog" aria-label="Save"><div class="vp-handle"></div>'
+      + '<div class="vp-head"><h3 style="flex:1;text-align:center;margin-left:34px">Save ' + ref + '</h3><button type="button" aria-label="Close">&times;</button></div>'
+      + '<p class="vp-label" style="margin-top:0;text-align:center">How would you like to keep this ' + kind + '?</p>'
+      + '<button class="btn-primary" id="svNormal" type="button" style="margin-bottom:10px"><span class="btn-label">Normal save</span></button>'
+      + '<button class="btn-primary" id="svRemind" type="button" style="background:var(--paper-dim);color:var(--ink);box-shadow:none"><span class="btn-label">Save and remind me</span></button></div>';
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => { ov.style.display = 'flex'; });
+    const done = fn => { try{ window.filtboDismissSheet(ov, () => { ov.remove(); fn && fn(); }); }catch(e){ ov.remove(); fn && fn(); } };
+    ov.querySelector('#svNormal').addEventListener('click', () => done(doSave));
+    ov.querySelector('#svRemind').addEventListener('click', () => done(() => {
+      doSave();
+      try{ openPlanForm(); $('#plan-topic').value = ref; $('#plan-days').value = '7'; }catch(e){}
+    }));
+  }
+
+  function toggleVerseSave(book, chapter, num, text, btnEl, _go){
     const id = verseId(book, chapter, num);
     const idx = state.savedItems.findIndex(s => s.id === id);
+    if(idx < 0 && _go !== true){ askSaveMode(`${book} ${chapter}:${num}`, () => toggleVerseSave(book, chapter, num, text, btnEl, true), 'verse'); return; }
     if(idx >= 0){
       state.savedItems.splice(idx, 1);
       if(btnEl){ btnEl.classList.remove('saved'); btnEl.querySelector('svg').setAttribute('fill','none'); }
@@ -7048,11 +7083,12 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     persistSession();
   }
 
-  function toggleChapterSave(){
+  function toggleChapterSave(_go){
     if(!currentReading) return;
     const {book, chapter} = currentReading;
     const id = chapterId(book, chapter);
     const idx = state.savedItems.findIndex(s => s.id === id);
+    if(idx < 0 && _go !== true){ askSaveMode(`${book} ${chapter}`, () => toggleChapterSave(true), 'chapter'); return; }
     if(idx >= 0){
       state.savedItems.splice(idx, 1);
     } else {
@@ -7355,7 +7391,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         lastTestament = b.testament;
       }
       const chWord = b.chapters > 1 ? t('unit_chapters') : t('unit_chapter');
-      html += `<div class="book-row" data-book="${b.name}"><div class="br-num">${b.name.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase()}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} ${chWord}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+      html += `<div class="book-row" data-book="${b.name}"><div class="br-num">${bookArt(b.name)}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} ${chWord}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg></div>`;
     });
     results.innerHTML = html;
     $('#booksBack').addEventListener('click', showSearchHome);
@@ -7982,7 +8018,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         lastTestament = b.testament;
       }
       const chWord = b.chapters > 1 ? t('unit_chapters') : t('unit_chapter');
-      html += `<div class="book-row" data-book="${b.name}"><div class="br-num">${b.name.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase()}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} ${chWord}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg></div>`;
+      html += `<div class="book-row" data-book="${b.name}"><div class="br-num">${bookArt(b.name)}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} ${chWord}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg></div>`;
     });
     wrap.innerHTML = html;
     $('#audioBooksBack').addEventListener('click', renderAudioHome);
@@ -8083,7 +8119,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         bookMatches.forEach(b => {
           const row = document.createElement('div');
           row.className = 'book-row';
-          row.innerHTML = `<div class="br-num">${b.name.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase()}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} chapter${b.chapters>1?'s':''}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>`;
+          row.innerHTML = `<div class="br-num">${bookArt(b.name)}</div><div class="br-info"><h4>${b.name}</h4><p>${b.chapters} chapter${b.chapters>1?'s':''}</p></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>`;
           row.addEventListener('click', () => showAudioChapterGrid(b.name));
           wrap.appendChild(row);
         });
@@ -10654,6 +10690,126 @@ if ('serviceWorker' in navigator) {
   }
   track.addEventListener('pointerup', end); track.addEventListener('pointercancel', end); track.addEventListener('pointerleave', end);
   go(0); play();
+})();
+</script>
+<script>
+/* iOS-style sheets: spring open, drag down to minimize, drag the handle up to expand, flick to dismiss. */
+(function(){
+  var SPRING='cubic-bezier(.32,.72,0,1)', bypass=new WeakSet();
+  function shown(ov){ return ov.style.display && ov.style.display!=='none'; }
+  function sheetOf(ov){ return ov.querySelector(':scope > .vp-sheet'); }
+  function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+  function openAnim(ov){
+    var sh=sheetOf(ov); if(!sh) return;
+    ov._exp=false; sh.style.maxHeight=''; sh.style.transform=''; ov.style.background='';
+    ov.animate([{opacity:0},{opacity:1}],{duration:300,easing:'ease-out'});
+    sh.animate([{transform:'translate3d(0,100%,0)'},{transform:'translate3d(0,0,0)'}],{duration:550,easing:SPRING});
+  }
+  function reset(ov){
+    var sh=sheetOf(ov);
+    ov.getAnimations().forEach(function(a){a.cancel();});
+    if(sh){ sh.getAnimations().forEach(function(a){a.cancel();}); sh.style.transform=''; sh.style.maxHeight=''; }
+    ov.style.background=''; ov._closing=false; ov._exp=false;
+  }
+  function dismiss(ov,fromY,vel){
+    var sh=sheetOf(ov); if(!sh||ov._closing) return;
+    ov._closing=true;
+    var h=sh.getBoundingClientRect().height, dur=clamp(320-(vel||0)*90,180,320);
+    sh.style.transform='';
+    var a=sh.animate([{transform:'translate3d(0,'+(fromY||0)+'px,0)'},{transform:'translate3d(0,'+(h+30)+'px,0)'}],{duration:dur,easing:'cubic-bezier(.32,.72,.2,1)',fill:'forwards'});
+    ov.animate([{opacity:1},{opacity:0}],{duration:dur,easing:'ease-in',fill:'forwards'});
+    a.onfinish=function(){
+      bypass.add(ov);
+      var x=ov.querySelector('[aria-label="Close"]');
+      try{ if(x) x.click(); }catch(e){}
+      if(shown(ov)) ov.style.display='none';
+      bypass.delete(ov); reset(ov);
+      if(ov._after){ var cb=ov._after; ov._after=null; cb(); }
+    };
+  }
+  window.filtboDismissSheet=function(ov,cb){ ov._after=cb; dismiss(ov,0,0); };
+  function wire(ov){
+    var sh=sheetOf(ov); if(!sh) return;
+    var y0=0,lastY=0,lastT=0,dy=0,vel=0,active=false,mode='',tY=0,arm=false,bodyDrag=false;
+    function begin(y){ y0=lastY=y; lastT=performance.now(); dy=0; vel=0; active=true; sh.getAnimations().forEach(function(a){a.cancel();}); }
+    function tyOf(d){ if(d<0) return ov._exp ? d*.12 : -Math.pow(-d,.72); return d; }
+    function move(y){
+      var n=performance.now(); dy=y-y0; vel=(y-lastY)/Math.max(1,n-lastT); lastY=y; lastT=n;
+      var ty=tyOf(dy), h=sh.offsetHeight||1;
+      sh.style.transform='translate3d(0,'+ty+'px,0)';
+      ov.style.background='rgba(18,17,15,'+(0.55*(1-clamp(ty/h,0,1)))+')';
+    }
+    function settle(from){
+      sh.style.transform=''; ov.style.background='';
+      sh.animate([{transform:'translate3d(0,'+from+'px,0)'},{transform:'translate3d(0,0,0)'}],{duration:480,easing:SPRING});
+    }
+    function end(){
+      if(!active) return; active=false;
+      var ty=tyOf(dy), h=sh.offsetHeight||1;
+      if(!ov._exp){
+        if(dy>0 && (dy>h*.25 || vel>.6)) return dismiss(ov,ty,vel);
+        if(dy<-45 && mode==='ptr'){                       // expand
+          var h0=sh.offsetHeight; sh.style.maxHeight='94vh'; var h1=sh.offsetHeight;
+          if(h1>h0+4){ ov._exp=true; sh.animate([{maxHeight:h0+'px'},{maxHeight:'94vh'}],{duration:480,easing:SPRING}); }
+          else sh.style.maxHeight='';
+        }
+        return settle(ty);
+      }
+      // expanded: small pull collapses, big pull or flick dismisses
+      if(dy>0 && (vel>1.1 || dy>h*.45)) return dismiss(ov,ty,vel);
+      if(dy>70 || (dy>0 && vel>.5)){
+        var c1=sh.offsetHeight; sh.style.maxHeight=''; var tgt=getComputedStyle(sh).maxHeight; ov._exp=false;
+        sh.animate([{maxHeight:c1+'px'},{maxHeight:tgt}],{duration:480,easing:SPRING});
+      }
+      settle(ty);
+    }
+    // handle + title bar: pointer drag
+    sh.addEventListener('pointerdown',function(e){
+      if(ov._closing) return;
+      if(!e.target.closest('.vp-handle,.vp-head') || e.target.closest('button')) return;
+      if(e.pointerType==='mouse' && e.button!==0) return;
+      try{ sh.setPointerCapture(e.pointerId); }catch(x){}
+      mode='ptr'; begin(e.clientY);
+    });
+    sh.addEventListener('pointermove',function(e){ if(mode==='ptr' && active) move(e.clientY); });
+    function pend(){ if(mode==='ptr'){ end(); mode=''; } }
+    sh.addEventListener('pointerup',pend); sh.addEventListener('pointercancel',pend);
+    // body: pull down while scrolled to the top
+    sh.addEventListener('touchstart',function(e){
+      if(ov._closing || e.target.closest('.vp-handle,.vp-head')) return;
+      tY=e.touches[0].clientY; arm=true; bodyDrag=false;
+    },{passive:true});
+    sh.addEventListener('touchmove',function(e){
+      if(!arm) return; var y=e.touches[0].clientY, d=y-tY;
+      if(!bodyDrag){
+        if(Math.abs(d)<6) return;
+        if(d>0 && sh.scrollTop<=0){ bodyDrag=true; mode='touch'; begin(y); } else { arm=false; return; }
+      }
+      e.preventDefault(); move(y);
+    },{passive:false});
+    function tend(){ if(bodyDrag){ bodyDrag=false; end(); mode=''; } arm=false; }
+    sh.addEventListener('touchend',tend); sh.addEventListener('touchcancel',tend);
+  }
+  function attach(ov){
+    if(ov._iosSheet) return; ov._iosSheet=true;
+    var was=shown(ov);
+    new MutationObserver(function(){ var now=shown(ov); if(now && !was) openAnim(ov); if(!now && was) reset(ov); was=now; })
+      .observe(ov,{attributes:true,attributeFilter:['style']});
+    wire(ov);
+  }
+  // Close button / backdrop tap: slide down first, then run the original close
+  document.addEventListener('click',function(e){
+    var ov=e.target.closest && e.target.closest('.vp-overlay');
+    if(!ov || bypass.has(ov) || !shown(ov)) return;
+    if(e.target===ov || e.target.closest('[aria-label="Close"]')){
+      e.stopImmediatePropagation(); e.preventDefault(); dismiss(ov,0,0);
+    }
+  },true);
+  function scan(root){ (root.querySelectorAll?root.querySelectorAll('.vp-overlay'):[]).forEach(attach); }
+  scan(document);
+  new MutationObserver(function(m){ m.forEach(function(r){ r.addedNodes.forEach(function(n){
+    if(n.nodeType!==1) return; if(n.classList.contains('vp-overlay')) attach(n); else scan(n);
+  }); }); }).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
 </body>
