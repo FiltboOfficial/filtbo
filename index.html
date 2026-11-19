@@ -61,6 +61,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600;1,700;1,800&family=Merriweather:wght@400;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Dancing+Script:wght@400;600;700&family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600;1,700;1,800&family=Merriweather:wght@400;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Dancing+Script:wght@400;600;700&family=Caveat:wght@400;600;700&family=Inter:wght@400;500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet"></noscript>
+<script>/* Early theme: apply saved/system theme before first paint (default = System) */
+(function(){try{var p=null;try{p=localStorage.getItem('filtboAppearancePreference')}catch(e){}
+var d=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+var t=(p==='light'||p==='dark')?p:(d?'dark':'light');
+var r=document.documentElement;r.setAttribute('data-filtbo-theme',t);r.style.colorScheme=t;}catch(e){}})();</script>
 <script>try{var __f=localStorage.getItem('filtboFont');if(__f&&__f!=='classic')document.documentElement.setAttribute('data-font',__f)}catch(e){}</script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <!-- ═══ CSS 01 · BASE — Core layout, screens, buttons, forms, reader, cards and the default (light) theme. ═══ -->
@@ -10205,7 +10210,7 @@ if ('serviceWorker' in navigator) {
 <script id="filtbo-system-preferences">
 (function(){
   const THEME_KEY='filtboAppearancePreference';
-  const getPref=()=>localStorage.getItem(THEME_KEY)||'light';
+  const getPref=()=>{ try{ return localStorage.getItem(THEME_KEY)||'system'; }catch(e){ return 'system'; } };
   const systemDark=()=>window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   function resolvedTheme(pref){ return pref==='system' ? (systemDark()?'dark':'light') : pref; }
   function paintTheme(resolved){
