@@ -1724,11 +1724,8 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
   var t0=Date.now(), el=document.getElementById('filtboSplash'), done=false;
   function hide(){ if(done) return; done=true; el.classList.add('out'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },500); }
   function ready(){ var l=document.getElementById('screen-loading'); return !!l && !l.classList.contains('active'); }
-  var iv=setInterval(function(){
-    var age=Date.now()-t0;
-    // logo shows about 3s, then straight into the app; only a broken page ever waits longer
-    if((age>=3000 && ready()) || age>=6000){ clearInterval(iv); hide(); }
-  },80);
+  // logo shows for exactly 2 seconds, then straight into the app
+  setTimeout(hide, 2000);
 })();
 </script>
 
@@ -5598,7 +5595,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   function loadingDurationMs(){
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const type = conn && conn.effectiveType;
-    return 2500;   // same short logo time online or offline: the app never waits on the network
+    return 1900;   // app is ready underneath just before the 2s splash lifts: never waits on the network
   }
 
   setTimeout(async () => {
