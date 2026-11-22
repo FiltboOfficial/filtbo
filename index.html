@@ -1724,8 +1724,16 @@ html.theme-switching *, html.theme-switching *::before, html.theme-switching *::
   var t0=Date.now(), el=document.getElementById('filtboSplash'), done=false;
   function hide(){ if(done) return; done=true; el.classList.add('out'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); },500); }
   function ready(){ var l=document.getElementById('screen-loading'); return !!l && !l.classList.contains('active'); }
-  // logo shows for exactly 2 seconds, then straight into the app
-  setTimeout(hide, 2000);
+  // logo shows for 2 seconds, then lifts straight onto the app (never onto a black screen):
+  // it only lifts once the app's first screen is active underneath (hard failsafe at 6s)
+  function poll(){
+    if(done) return;
+    var late = Date.now()-t0 > 2300;
+    if(ready()){ if(late) setTimeout(hide,220); else hide(); }
+    else if(Date.now()-t0 > 6000) hide();
+    else setTimeout(poll,30);
+  }
+  setTimeout(poll, 2000);
 })();
 </script>
 
@@ -1756,6 +1764,15 @@ button:active,.btn-primary:active,.btn-google:active,.nav-item:active,.vbtn:acti
 
 /* Premium / payment screens: completely still */
 #screen-premium,#screen-premium *,#screen-premium-intro,#screen-premium-intro *,#screen-donate,#screen-donate *{animation:none !important; transition:none !important; scale:none !important;}
+</style>
+<style id="filtbo-splash-glow">
+  /* Logo glows softly while the splash is up */
+  #filtboSplash > img{animation:fsLogoGlow 1.4s ease-in-out infinite !important; will-change:filter;}
+  @keyframes fsLogoGlow{
+    0%,100%{filter:drop-shadow(0 0 6px rgba(242,121,15,.35)) drop-shadow(0 0 18px rgba(242,121,15,.25));}
+    50%{filter:drop-shadow(0 0 14px rgba(255,160,60,.95)) drop-shadow(0 0 38px rgba(242,121,15,.75)) drop-shadow(0 0 70px rgba(242,121,15,.45));}
+  }
+  @media (prefers-reduced-motion:reduce){#filtboSplash > img{animation:none !important; filter:drop-shadow(0 0 14px rgba(255,160,60,.8)) drop-shadow(0 0 38px rgba(242,121,15,.55));}}
 </style>
 <style id="filtbo-ios-sheets">
 /* Verse / chapter / translation pickers: iOS spring + drag-to-minimize (driven by the script at the end of the page) */
@@ -5595,7 +5612,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
   function loadingDurationMs(){
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     const type = conn && conn.effectiveType;
-    return 1900;   // app is ready underneath just before the 2s splash lifts: never waits on the network
+    return 0;   // app screen is prepared right away underneath the splash, so nothing black shows when the logo lifts
   }
 
   setTimeout(async () => {
