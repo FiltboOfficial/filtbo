@@ -1503,6 +1503,50 @@ html #screen-auth[data-step="start"] .auth-explore{color:rgba(255,255,255,.38);}
 #screen-auth[data-step="start"] .auth-top{display:none;}
 #screen-auth[data-step="start"] .auth-slides{padding-top:calc(24px + env(safe-area-inset-top));}
 </style>
+<style id="filtbo-google-search">
+  /* Google-style live search: pill box, instant suggestions, clean result list */
+  .search-header{position:relative; z-index:20;}
+  .search-box{border-radius:999px; padding:13px 18px; box-shadow:0 2px 10px rgba(0,0,0,.18);}
+  .search-box input{font-size:15.5px;}
+  .g-suggest{position:absolute; left:22px; right:22px; top:100%; margin-top:6px; background:var(--white); border:1px solid var(--line); border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden; padding:6px 0;}
+  .g-sug{display:flex; align-items:center; gap:12px; padding:11px 18px; font-size:14.5px; color:var(--ink); cursor:pointer;}
+  .g-sug:active,.g-sug:hover{background:var(--paper-dim);}
+  .g-sug svg{flex:none; color:#9a9486;}
+  .g-sug b{font-weight:500; color:var(--ink-soft);}
+  .g-sug span{font-weight:700;}
+  .g-stats{font-size:12.5px; color:#70757a; margin:0 0 14px;}
+  .g-skel i{display:block; height:12px; border-radius:6px; background:linear-gradient(90deg,#e9e5dc 25%,#f5f2ea 50%,#e9e5dc 75%); background-size:200% 100%; animation:gskel 1.1s linear infinite; margin:0 0 12px;}
+  .g-skel i:nth-child(1){width:38%; height:16px;} .g-skel i:nth-child(2){width:92%;} .g-skel i:nth-child(3){width:80%;} .g-skel i:nth-child(4){width:64%;}
+  @keyframes gskel{to{background-position:-200% 0;}}
+  .search-results .result-item{background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:2px 0 16px; margin-bottom:16px;}
+  .search-results .result-ref{font-size:12.5px; font-weight:500; color:#70757a; letter-spacing:0; margin-bottom:3px;}
+  .search-results .result-text{font-family:'Manrope',sans-serif; font-style:normal; font-size:14px; line-height:1.6; color:#4d5156;}
+  .search-results .result-text mark{background:transparent; color:var(--ink); font-weight:800;}
+  .search-results .read-link{color:#1a0dab; font-weight:600;}
+  .search-results .adv-card{border-radius:14px; border:1px solid var(--line); box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .search-results .adv-card h4{font-size:19px; font-weight:600; color:#1a0dab;}
+  .g-dict{background:var(--white); border:1px solid var(--line); border-radius:16px; padding:16px 18px; margin-bottom:14px; box-shadow:0 1px 6px rgba(0,0,0,.06);}
+  .g-dict-w{font-size:26px; font-weight:600; color:var(--ink);}
+  .g-dict-p{font-size:14px; color:#70757a; margin-left:10px;}
+  .g-dict-pos{font-size:13px; font-style:italic; color:#70757a; margin:12px 0 4px;}
+  .g-dict ol{margin:0; padding-left:20px;}
+  .g-dict li{font-size:14.5px; line-height:1.55; color:var(--ink); margin-bottom:6px;}
+  .g-dict li em{display:block; color:#70757a; font-size:13px; font-style:normal;}
+  .g-dict-src{font-size:11px; color:#9a9486; margin-top:10px;}
+  .g-dict-note{font-size:13px; color:#70757a; margin:0 0 14px;}
+  html[data-filtbo-theme="dark"] .search-results .read-link,
+  html[data-filtbo-theme="dark"] .search-results .adv-card h4{color:#8ab4f8;}
+  html[data-filtbo-theme="dark"] .search-results .result-text{color:#bdc1c6;}
+  html[data-filtbo-theme="dark"] .search-results .result-ref,
+  html[data-filtbo-theme="dark"] .g-stats,
+  html[data-filtbo-theme="dark"] .g-dict-p,
+  html[data-filtbo-theme="dark"] .g-dict-pos,
+  html[data-filtbo-theme="dark"] .g-dict li em{color:#9aa0a6;}
+  html[data-filtbo-theme="dark"] .g-skel i{background:linear-gradient(90deg,#2b2b2b 25%,#383838 50%,#2b2b2b 75%); background-size:200% 100%;}
+  .photo-loading{position:relative;}
+  .photo-loading::before{content:''; position:absolute; inset:0; border-radius:50%; background:rgba(0,0,0,.5); z-index:1;}
+  .photo-loading::after{content:''; position:absolute; left:50%; top:50%; width:46%; height:46%; margin:-23% 0 0 -23%; border-radius:50%; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; animation:spin .7s linear infinite; z-index:2;}
+</style>
 </head>
 <body>
 <!-- ═══ CSS 16 · SPLASH + LOGO RULES — Launch splash and how logos are drawn. ═══ -->
@@ -2431,6 +2475,7 @@ button:active,.btn-primary:active,.btn-google:active,.nav-item:active,.vbtn:acti
         </div>
         <button class="search-cancel" id="searchCancel">Cancel</button>
       </div>
+      <div id="searchSuggest" class="g-suggest" role="listbox" style="display:none;"></div>
     </div>
     <div class="search-results" id="searchResults">
       <div class="browse-entry" id="browseAllBtn">
@@ -5964,45 +6009,32 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     if(removeRow) removeRow.style.display = state.avatarPhoto ? 'block' : 'none';
   }
 
-  // Changing the profile picture needs a live internet connection. Without one we
-  // say so and leave the current picture untouched.
-  function showPhotoNetToast(){
-    let t = document.getElementById('photoNetToast');
-    if(!t){
-      t = document.createElement('div');
-      t.id = 'photoNetToast'; t.setAttribute('role', 'alert');
-      t.style.cssText = 'position:fixed; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%); max-width:calc(100% - 32px); z-index:99999; background:#1d1a14; color:#fff; padding:12px 18px; border-radius:14px; font:700 13px/1.4 Manrope,sans-serif; text-align:center; box-shadow:0 8px 28px rgba(0,0,0,.28);';
-      t.textContent = 'Check your internet connection and try again.';
-      document.body.appendChild(t);
-    }
-    t.style.display = 'block';
-    clearTimeout(showPhotoNetToast._t);
-    showPhotoNetToast._t = setTimeout(() => { t.style.display = 'none'; }, 3500);
-  }
-  async function hasRealInternet(){
-    if(!navigator.onLine) return false;
-    try{
-      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 5000);
-      await fetch('https://www.gstatic.com/generate_204?_=' + Date.now(), {mode:'no-cors', cache:'no-store', signal:ctl.signal});
-      clearTimeout(to);
-      return true;
-    }catch(e){ return false; }
-  }
+  // Changing the profile picture works online and offline. The picture shows a
+  // loading spinner while the new photo is prepared, then it is saved on the device
+  // (and backed up to the cloud automatically whenever a connection is available).
+  $('#changePhotoBtn')?.addEventListener('click', () => $('#photoInput').click());
 
-  $('#changePhotoBtn')?.addEventListener('click', () => {
-    if(!navigator.onLine){ showPhotoNetToast(); return; }
-    $('#photoInput').click();
-  });
-
-  $('#photoInput')?.addEventListener('change', async function(){
+  $('#photoInput')?.addEventListener('change', function(){
     const file = this.files && this.files[0];
     this.value = '';
     if(!file || !file.type.startsWith('image/')) return;
-    if(!(await hasRealInternet())){ showPhotoNetToast(); return; }
+
+    const targets = [$('#profAvatar'), $('#avatarInitial')].filter(Boolean);
+    const startedAt = Date.now();
+    targets.forEach(el => el.classList.add('photo-loading'));
+    const finish = (apply) => {
+      const wait = Math.max(0, 700 - (Date.now() - startedAt)); // keep the spinner visible long enough to see
+      setTimeout(() => {
+        if(apply) apply();
+        targets.forEach(el => el.classList.remove('photo-loading'));
+      }, wait);
+    };
 
     const reader = new FileReader();
+    reader.onerror = () => finish();
     reader.onload = (e) => {
       const img = new Image();
+      img.onerror = () => finish();
       img.onload = () => {
         // Downscale to a small square so the photo stays light to store and share across the app.
         const size = 240;
@@ -6012,9 +6044,12 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
         const scale = Math.max(size / img.width, size / img.height);
         const w = img.width * scale, h = img.height * scale;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
-        state.avatarPhoto = canvas.toDataURL('image/jpeg', 0.85);
-        renderAvatarEls();
-        persistSession();
+        const data = canvas.toDataURL('image/jpeg', 0.85);
+        finish(() => {
+          state.avatarPhoto = data;
+          renderAvatarEls();
+          persistSession();
+        });
       };
       img.src = e.target.result;
     };
@@ -7494,7 +7529,7 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
       showSearchHome();
       return;
     }
-    searchTimer = setTimeout(() => runSearch(q), 280);
+    searchTimer = setTimeout(() => runSearch(q), 120);
   });
 
   // ---------- WORD DICTIONARY: Christian terms with meanings, Bible names and places, plus everyday English words. Works offline. ----------
@@ -7552,6 +7587,65 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     if(sugg && sugg.length) h += '<p class="testament-label">Related words</p><div class="topic-row" style="margin-bottom:12px;">' + sugg.map(x => `<button class="topic-chip" data-q="${escHtml(x)}" type="button">${escHtml(fwTitle(x))}</button>`).join('') + '</div>';
     return h;
   }
+
+  // ---------- LIVE: online dictionary for any word + Google-style suggestions ----------
+  const FW_NET_MSG = 'Check your internet connection and try again.';
+  async function fwOnlineLookup(word, run, hasBuiltIn){
+    const box = $('#fwOnlineBox'); if(!box) return;
+    const note = (t) => { box.innerHTML = '<p class="g-dict-note">' + escHtml(t) + '</p>'; };
+    if(!navigator.onLine){ if(!hasBuiltIn) note(FW_NET_MSG); return; }
+    const w = fwClean(word); if(!w) return;
+    const tries = fwVariants(w).slice(0, 3);
+    try{
+      for(const t of tries){
+        const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
+        const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(t), {signal: ctl.signal});
+        clearTimeout(to);
+        if(run !== searchRunId) return;
+        if(r.status === 404) continue;
+        if(!r.ok) throw new Error('bad');
+        const data = await r.json();
+        if(run !== searchRunId) return;
+        const e = data && data[0]; if(!e) continue;
+        const ph = e.phonetic || ((e.phonetics || []).find(x => x.text) || {}).text || '';
+        let h = '<div class="g-dict"><div><span class="g-dict-w">' + escHtml(e.word || t) + '</span>' + (ph ? '<span class="g-dict-p">' + escHtml(ph) + '</span>' : '') + '</div>';
+        (e.meanings || []).slice(0, 3).forEach(m => {
+          h += '<div class="g-dict-pos">' + escHtml(m.partOfSpeech || '') + '</div><ol>';
+          (m.definitions || []).slice(0, 2).forEach(d => { h += '<li>' + escHtml(d.definition || '') + (d.example ? '<em>“' + escHtml(d.example) + '”</em>' : '') + '</li>'; });
+          h += '</ol>';
+        });
+        h += '<div class="g-dict-src">Dictionary · live</div></div>';
+        box.innerHTML = h; return;
+      }
+      if(!hasBuiltIn) note('No dictionary entry found for “' + word + '”.');
+    }catch(err){
+      if(run !== searchRunId) return;
+      if(!hasBuiltIn) note(FW_NET_MSG);
+    }
+  }
+  (function(){
+    const inp = $('#searchInput'), box = $('#searchSuggest'); if(!inp || !box) return;
+    const hide = () => { box.style.display = 'none'; };
+    const render = () => {
+      const q = inp.value.trim(), cw = fwClean(q);
+      if(cw.length < 2){ hide(); return; }
+      const items = filtboWordSuggest(q, 6);
+      if(!items.length){ hide(); return; }
+      const mag = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+      box.innerHTML = items.map(x => `<div class="g-sug" role="option" data-q="${escHtml(x)}">${mag}<span><b>${escHtml(x.slice(0, cw.length))}</b>${escHtml(x.slice(cw.length))}</span></div>`).join('');
+      box.style.display = 'block';
+    };
+    inp.addEventListener('input', render);
+    inp.addEventListener('focus', render);
+    inp.addEventListener('blur', () => setTimeout(hide, 180));
+    inp.addEventListener('keydown', (e) => { if(e.key === 'Enter') hide(); });
+    box.addEventListener('mousedown', (e) => e.preventDefault());
+    box.addEventListener('click', (e) => {
+      const el = e.target.closest('.g-sug'); if(!el) return;
+      const q = el.dataset.q; inp.value = q; hide(); clearTimeout(searchTimer); runSearch(q); inp.blur();
+    });
+    $('#searchCancel')?.addEventListener('click', hide);
+  })();
 
   // ---------- SEARCH: any words you type give real Scripture, guidance and more places to look ----------
   const BOOK_ALIAS = { psalm:'Psalms', ps:'Psalms', psa:'Psalms', song:'Song of Solomon', songs:'Song of Solomon', 'song of songs':'Song of Solomon', sos:'Song of Solomon', jn:'John', jhn:'John', mt:'Matthew', matt:'Matthew', mk:'Mark', lk:'Luke', gen:'Genesis', ex:'Exodus', exo:'Exodus', lev:'Leviticus', num:'Numbers', deut:'Deuteronomy', dt:'Deuteronomy', josh:'Joshua', judg:'Judges', neh:'Nehemiah', esth:'Esther', prov:'Proverbs', pr:'Proverbs', eccl:'Ecclesiastes', ecc:'Ecclesiastes', isa:'Isaiah', jer:'Jeremiah', lam:'Lamentations', ezek:'Ezekiel', dan:'Daniel', hos:'Hosea', obad:'Obadiah', mic:'Micah', nah:'Nahum', hab:'Habakkuk', zeph:'Zephaniah', hag:'Haggai', zech:'Zechariah', mal:'Malachi', rom:'Romans', gal:'Galatians', eph:'Ephesians', phil:'Philippians', php:'Philippians', col:'Colossians', tit:'Titus', philem:'Philemon', heb:'Hebrews', jas:'James', rev:'Revelation', revelations:'Revelation' };
@@ -7714,7 +7808,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
     const qLower = qTrim.toLowerCase();
     const tokens = searchTokens(qTrim);
     const wordHit = filtboWordLookup(qTrim), wordSugg = filtboWordSuggest(qTrim, 8);
-    results.innerHTML = '<div class="search-status"><div class="sp"></div>Searching Scripture…</div>';
+    const t0 = performance.now();
+    if(!results.querySelector('.g-stats')) results.innerHTML = '<div class="g-skel"><i></i><i></i><i></i><i></i></div>';
 
     const version = currentBibleVersion();
     const index = await getVerseIndex(version);
@@ -7727,7 +7822,8 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
       <button class="more-row" data-go="ai" type="button"><span>Ask Geelko AI about “${escHtml(qTrim.length > 34 ? qTrim.slice(0, 34) + '…' : qTrim)}”</span><span>›</span></button>`;
 
 
-    html += filtboWordHtml(wordHit, wordSugg, qTrim);
+    const oneWord = /^[a-zA-Z][a-zA-Z'-]{1,29}$/.test(qTrim);
+    html += (oneWord ? '<div id="fwOnlineBox"></div>' : '') + filtboWordHtml(wordHit, wordSugg, qTrim);
 
     // 1) a typed reference (John 3:16, Psalm 23, 1 cor 13) shows the passage first
     let passage = null;
@@ -7788,6 +7884,10 @@ window.FILTBO_NOTIFY_BADGE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAA
 
     results.innerHTML = html;
     results.scrollTop = 0;
+    { const nRes = verses.length + guides.length + (passage ? 1 : 0) + (wordHit ? 1 : 0);
+      if(nRes) results.insertAdjacentHTML('afterbegin', `<p class="g-stats">About ${nRes.toLocaleString()} result${nRes === 1 ? '' : 's'} (${((performance.now() - t0) / 1000).toFixed(2)} seconds)</p>`);
+      else results.insertAdjacentHTML('afterbegin', '<p class="g-stats"></p>'); }
+    if(oneWord) fwOnlineLookup(qTrim, run, !!wordHit);
 
     // verse list with "show more" (15 at a time, up to 60)
     if(verses.length){
